@@ -17,9 +17,19 @@ MONGODB_DB = os.getenv("MONGODB_DB", "study_guide")
 
 # Websites allowed to call this API (browser CORS check). Comma-separated, no trailing slash, e.g.
 # https://my-frontend.onrender.com. The local dev frontend is always allowed.
-FRONTEND_ORIGINS = ["http://localhost:3001"] + [
+FRONTEND_ORIGINS = ["http://localhost:3000"] + [
     o.strip().rstrip("/") for o in os.getenv("FRONTEND_ORIGIN", "").split(",") if o.strip()
 ]
+
+# The /debug endpoints expose pipeline internals (prompts, chunks, token usage). Off unless explicitly turned on, so a
+# deployment never ships them by accident. Set ENABLE_DEBUG=true in backend/.env for local development.
+ENABLE_DEBUG = os.getenv("ENABLE_DEBUG", "").strip().lower() in ("1", "true", "yes")
+
+# Per-client request limits (app/ratelimit.py). On unless RATE_LIMIT_ENABLED=false.
+RATE_LIMIT_ENABLED = os.getenv("RATE_LIMIT_ENABLED", "true").strip().lower() not in ("0", "false", "no")
+
+# DEBUG, INFO, WARNING or ERROR
+LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").strip().upper()
 
 # Signs login tokens. Anyone who knows it can forge a login, so it must be long, random and secret.
 JWT_SECRET = os.getenv("JWT_SECRET", "")

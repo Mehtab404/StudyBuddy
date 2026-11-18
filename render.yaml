@@ -1,0 +1,28 @@
+# Render Blueprint for the backend API. In Render: New -> Blueprint -> pick this repo.
+# The frontend is deployed separately on Vercel, and the database is MongoDB Atlas.
+services:
+  - type: web
+    name: studybuddy-api
+    runtime: python
+    plan: free
+    rootDir: backend
+    # Downloads the embedding model at build time, so it is not fetched again after every restart or spin-down
+    buildCommand: >-
+      pip install -r requirements.txt &&
+      python -c "from app.embeddings import EMBED_MODEL, EMBED_CACHE_DIR; from fastembed import TextEmbedding; TextEmbedding(model_name=EMBED_MODEL, cache_dir=EMBED_CACHE_DIR)"
+    # --proxy-headers: read the visitor's IP from Render's proxy, so per-IP limits apply per visitor, not to everyone
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT --proxy-headers --forwarded-allow-ips="*"
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.14.7
+      - key: GROQ_API_KEY
+        sync: false # asked for when the Blueprint is created
+      - key: MONGODB_URL
+        sync: false
+      - key: MONGODB_DB
+        value: study_guide
+      - key: JWT_SECRET
+        generateValue: true # Render makes a random secret
+      - key: FRONTEND_ORIGIN
+        sync: false # your Vercel URL, e.g. https://studybuddy.vercel.app (no trailing slash)

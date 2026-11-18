@@ -1,12 +1,14 @@
-fastapi
-uvicorn[standard]
-python-dotenv
-groq
-pymongo
-pyjwt
-argon2-cffi
-email-validator
-python-multipart
-pypdf
-fastembed
-numpy
+# Pinned to the versions the app was tested with, so a deploy cannot pick up a breaking release.
+# To upgrade: change a version, run the tests, then deploy.
+fastapi==0.164.0
+uvicorn[standard]==0.54.0
+python-dotenv==1.2.4
+groq==1.7.0
+pymongo==4.20.0
+pyjwt==2.15.1
+argon2-cffi==25.1.0
+email-validator==2.4.0
+python-multipart==0.0.34
+pypdf==7.1.1
+fastembed==0.9.1
+numpy==2.5.5

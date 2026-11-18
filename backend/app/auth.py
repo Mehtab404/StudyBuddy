@@ -12,6 +12,7 @@ from pymongo.errors import DuplicateKeyError
 from app.config import JWT_EXPIRE_MINUTES, JWT_SECRET
 from app.database import get_db
 from app.models import now, parse_id
+from app.ratelimit import login_blocked_for, record_failed_login
 
 ALGORITHM = "HS256"
 
@@ -97,7 +98,15 @@ def signup(body: SignupIn, db: Database = Depends(get_db)):
 @router.post("/login", response_model=TokenOut)
 def login(form: OAuth2PasswordRequestForm = Depends(), db: Database = Depends(get_db)):
     """Form fields: username (your email) and password. Form-encoded so /docs' Authorize button works."""
-    user = db.users.find_one({"email": _normalize_email(form.username)})
+    email = _normalize_email(form.username)
+    wait = login_blocked_for(email)
+    if wait is not None:
+        raise HTTPException(
+            status_code=429,
+            detail=f"Too many failed logins for this account. Please wait {(wait + 59) // 60} minutes and try again.",
+            headers={"Retry-After": str(wait)},
+        )
+    user = db.users.find_one({"email": email})
 
     password_ok = False
     try:
@@ -107,6 +116,7 @@ def login(form: OAuth2PasswordRequestForm = Depends(), db: Database = Depends(ge
         pass
 
     if not password_ok:
+        record_failed_login(email)
         # Same message whether the email or the password was wrong
         raise HTTPException(status_code=401, detail="Incorrect email or password")
 

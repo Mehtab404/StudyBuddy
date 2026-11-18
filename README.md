@@ -128,8 +128,66 @@ Open http://localhost:3000, sign up, and upload some notes.
 | `REVIEW_MODEL` | no | A different model for the fact-checker (default: same as the generator) |
 | `CHUNK_SIZE`, `CHUNK_OVERLAP` | no | Chunking settings (default 1200 and 200 characters) |
 | `EMBED_MODEL` | no | Embedding model (default `BAAI/bge-small-en-v1.5`) |
+| `ENABLE_DEBUG` | no | `true` turns on the `/debug/*` endpoints. Off by default; keep it off in production |
+| `RATE_LIMIT_ENABLED` | no | `false` turns off the request limits below. On by default |
+| `LOG_LEVEL` | no | `DEBUG`, `INFO` (default), `WARNING` or `ERROR` |
+
+### Request limits
+
+To stop password guessing and protect the Groq quota, each client gets a limited number of `POST` requests per minute
+(`backend/app/ratelimit.py`). Going over returns HTTP 429 with a `Retry-After` header.
+
+| Routes | Limit | Counted per |
+|---|---|---|
+| `/auth/login`, `/auth/signup` | 10 per minute | IP address |
+| `/auth/login` with a wrong password | 10 failures per 15 minutes, then that account is locked for the rest of the 15 minutes | email address |
+| AI: `/flashcards`, `/sets/{id}/ask`, `/revision`, `/quiz`, `/paper`, `/flashcards` | 15 per minute | logged-in user |
+| Indexing: `POST /sets`, `/sets/upload`, `/sets/{id}/chunks/rebuild`, `/embed` | 10 per minute | logged-in user |
+
+The counts are kept in memory, so they apply per server process. Behind a proxy or load balancer, start uvicorn with
+`--proxy-headers` so the limits see each visitor's real IP address.
 
 The frontend reads `NEXT_PUBLIC_API_URL` (default `http://localhost:8000`).
+
+## Deploying (Render + Vercel + MongoDB Atlas)
+
+The backend runs on Render, the frontend on Vercel, and the data in MongoDB Atlas. All three have free tiers.
+
+### 1. MongoDB Atlas
+
+1. Create a free cluster and a database user (a password of letters and numbers avoids URL-encoding problems).
+2. **Network Access → Add IP Address → Allow access from anywhere (`0.0.0.0/0`).** Render's free tier has no fixed IP
+   address, so Atlas cannot be limited to it. The database user's password is what protects the data.
+3. Copy the `mongodb+srv://...` connection string.
+
+### 2. Backend on Render
+
+1. Push this repository to GitHub.
+2. In Render: **New → Blueprint**, pick the repository. Render reads `render.yaml`.
+3. When asked, fill in `GROQ_API_KEY`, `MONGODB_URL`, and for now `FRONTEND_ORIGIN=http://localhost:3000`.
+   `JWT_SECRET` is generated for you.
+4. Wait for the deploy, then open `https://<your-service>.onrender.com/health`. It should show
+   `"groq_key_loaded": true`.
+
+### 3. Frontend on Vercel
+
+1. In Vercel: **Add New → Project**, import the repository and set **Root Directory** to `frontend`.
+2. Add the environment variable `NEXT_PUBLIC_API_URL=https://<your-service>.onrender.com` (no trailing slash).
+   It is built into the site, so after changing it you must redeploy.
+3. Deploy, and copy the site's address, e.g. `https://studybuddy.vercel.app`.
+
+### 4. Connect the two
+
+In Render → your service → **Environment**, set `FRONTEND_ORIGIN` to the Vercel address (no trailing slash) and save.
+Render restarts the service. Sign up on the Vercel site to check everything works.
+
+### Things to know about the free tiers
+
+- Render's free service **sleeps after 15 minutes without traffic**. The next request wakes it, which takes about a
+  minute, so the first page load after a break is slow.
+- The backend uses about 375 MB of memory with the embedding model loaded. Render's free tier has 512 MB, so run one
+  process only (the default).
+- Request limits are counted in memory and reset when the service restarts or sleeps.
 
 ## Tests and evaluation
 
@@ -152,7 +210,8 @@ python eval_answers.py --limit 8              # full answer pipeline on a few qu
 | `GET /sets/{id}/chunks`, `/chunks/search` | Inspect chunks and try the search modes |
 | `GET /quiz/due`, `POST /cards/{id}/review` | Spaced-repetition review |
 
-`/debug/*` endpoints expose pipeline internals for development. Remove or protect them before a public deployment.
+`/debug/*` endpoints expose pipeline internals for development. They are off unless `ENABLE_DEBUG=true` is set in
+`backend/.env`. Keep it off in a public deployment.
 
 ## Known limitations
 
