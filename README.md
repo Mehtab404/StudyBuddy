@@ -1,5 +1,7 @@
 # AI Study Guide
 
+**Live product: https://studybuddy-frontend-gu52.vercel.app**
+
 Upload your notes (up to 3 PDF or text files) and get revision notes, practice quizzes, exam papers and spaced-repetition
 flashcards. Then **ask questions about your notes** and get answers that come only from what you uploaded, with the exact
 passages shown and a second AI that fact-checks every answer before you see it.
