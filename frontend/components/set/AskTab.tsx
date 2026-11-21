@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { ErrorBox, card, chip, errorMessage, inputClass, label, primaryButton, secondaryButton, selectClass } from "@/components/ui";
 import { api, type AskResult, type SearchMode, type StudySet } from "@/lib/api";
-import { ErrorBox, errorMessage, inputClass, primaryButton, secondaryButton } from "./ui";
 
 type Turn = { question: string; result: AskResult; verifyWasOn: boolean };
 
@@ -11,18 +11,20 @@ function VerificationNote({ turn }: { turn: Turn }) {
   const v = turn.result.verification;
   if (v.status === "verified") {
     return (
-      <p className="mt-3 text-xs text-emerald-700">
-        ✓ Checked against your notes
-        {v.attempts > 1 && ` — corrected after review (answer ${v.attempts} of ${v.max_attempts})`}
+      <p className="mt-4">
+        <span className={`${chip} bg-mint`}>
+          ✓ Checked against your notes
+          {v.attempts > 1 && ` · corrected after review (answer ${v.attempts} of ${v.max_attempts})`}
+        </span>
       </p>
     );
   }
   if (v.status === "unverified") {
     const issues = v.rounds[v.rounds.length - 1]?.issues ?? [];
     return (
-      <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
-        <p className="font-medium">
-          Could not fully verify this answer after {v.attempts} attempts. Check it against the sources below.
+      <div className="mt-4 border-2 border-ink bg-amber-100 px-4 py-3 text-sm text-amber-950">
+        <p className="font-bold">
+          ⚠ Could not fully verify this answer after {v.attempts} attempts. Check it against the sources below.
         </p>
         {issues.length > 0 && (
           <ul className="mt-1 list-disc pl-4">
@@ -35,7 +37,7 @@ function VerificationNote({ turn }: { turn: Turn }) {
     );
   }
   if (v.status === "unchecked" && turn.verifyWasOn) {
-    return <p className="mt-3 text-xs text-stone-400">The fact-check could not run, so this answer is unchecked.</p>;
+    return <p className="mt-4 font-mono text-xs text-stone-500">The fact-check could not run, so this answer is unchecked.</p>;
   }
   return null;
 }
@@ -78,36 +80,34 @@ export default function AskTab({ set }: { set: StudySet }) {
 
   return (
     <div>
-      <ul className="space-y-5">
+      <ul className="space-y-6">
         {turns.map((t, i) => (
-          <li key={i} className="rounded-xl border border-stone-200 bg-white p-5 shadow-sm">
-            <p className="text-sm font-medium text-stone-500">{t.question}</p>
+          <li key={i} className={card}>
+            <p className="inline-block border-2 border-ink bg-sun px-3 py-1 font-display font-bold text-ink">{t.question}</p>
             {t.result.search_query.trim() !== t.question && (
-              <p className="mt-1 text-xs text-stone-400">Searched for: {t.result.search_query}</p>
+              <p className="mt-2 font-mono text-xs text-stone-500">Searched for: {t.result.search_query}</p>
             )}
-            <p className={`mt-2 whitespace-pre-wrap ${t.result.found ? "text-stone-800" : "text-amber-800"}`}>
+            <p className={`mt-4 whitespace-pre-wrap text-lg leading-relaxed ${t.result.found ? "text-ink" : "text-amber-800"}`}>
               {t.result.answer}
             </p>
             <VerificationNote turn={t} />
 
             {t.result.sources.length > 0 && (
-              <div className="mt-4 border-t border-stone-100 pt-3">
-                <p className="text-xs font-medium uppercase tracking-wide text-stone-400">
-                  {t.result.found ? "From your notes" : "Closest passages (probably not relevant)"}
-                </p>
-                <ul className="mt-2 space-y-2">
+              <div className="mt-5 border-t-2 border-stone-200 pt-4">
+                <p className={label}>{t.result.found ? "From your notes" : "Closest passages (probably not relevant)"}</p>
+                <ul className="mt-3 space-y-2">
                   {t.result.sources.map((s) => (
                     <li key={s.number}>
-                      <details className="rounded-lg bg-stone-50 px-3 py-2 text-sm">
-                        <summary className="cursor-pointer text-stone-700">
-                          <span className="font-medium">[{s.number}]</span>
+                      <details className="border-2 border-ink bg-background px-3 py-2 text-sm">
+                        <summary className="cursor-pointer text-ink">
+                          <span className="font-mono font-bold">[{s.number}]</span>
                           {set.files.length > 1 && s.source ? ` ${s.source} ·` : ""}
                           {s.heading ? ` ${s.heading}` : ""}
                           {s.page_number ? ` · page ${s.page_number}` : ""}
-                          {s.score !== null && <span className="text-stone-400"> · match {s.score.toFixed(2)}</span>}
-                          <span className="text-stone-500"> — {s.snippet}</span>
+                          {s.score !== null && <span className="text-stone-500"> · match {s.score.toFixed(2)}</span>}
+                          <span className="text-stone-600"> — {s.snippet}</span>
                         </summary>
-                        <p className="mt-2 whitespace-pre-wrap text-stone-600">{s.text}</p>
+                        <p className="mt-2 whitespace-pre-wrap border-l-4 border-sun pl-3 text-stone-700">{s.text}</p>
                       </details>
                     </li>
                   ))}
@@ -120,28 +120,29 @@ export default function AskTab({ set }: { set: StudySet }) {
 
       <ErrorBox message={error} />
 
-      <form onSubmit={ask} className={`flex flex-wrap gap-3 ${turns.length > 0 ? "mt-6" : ""}`}>
+      <form onSubmit={ask} className={`flex flex-wrap gap-3 ${turns.length > 0 ? "mt-8" : ""}`}>
         <input
           value={question}
           onChange={(e) => setQuestion(e.target.value)}
           maxLength={500}
           placeholder={turns.length > 0 ? "Ask a follow-up…" : "Ask anything about these notes…"}
           aria-label="Your question"
-          className={`${inputClass} min-w-0 flex-1`}
+          className={`${inputClass} min-w-0 flex-1 px-4 py-3 text-base`}
         />
         <button type="submit" disabled={loading || question.trim().length < 3} className={primaryButton}>
           {loading ? (verify ? "Answering and checking…" : "Searching your notes…") : "Ask"}
+          {!loading && <span aria-hidden="true">→</span>}
         </button>
       </form>
 
-      <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-xs text-stone-500">
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-sm text-stone-600">
         <label className="flex items-center gap-2">
-          Search
+          <span className="font-display font-bold text-ink">Search</span>
           <select
             value={mode}
             onChange={(e) => setMode(e.target.value as SearchMode)}
             title={MODES.find((m) => m.value === mode)?.hint}
-            className="rounded-lg border border-stone-200 bg-white px-2 py-1 text-stone-700"
+            className={`${selectClass} text-sm`}
           >
             {MODES.map((m) => (
               <option key={m.value} value={m.value}>
@@ -149,10 +150,13 @@ export default function AskTab({ set }: { set: StudySet }) {
               </option>
             ))}
           </select>
-          <span className="hidden sm:inline">{MODES.find((m) => m.value === mode)?.hint}</span>
+          <span className="hidden text-xs sm:inline">{MODES.find((m) => m.value === mode)?.hint}</span>
         </label>
-        <label className="flex items-center gap-2" title="A second AI checks the answer against your notes and asks for a rewrite if it finds a mistake. Slower.">
-          <input type="checkbox" checked={verify} onChange={(e) => setVerify(e.target.checked)} />
+        <label
+          className="flex cursor-pointer items-center gap-2 text-ink"
+          title="A second AI checks the answer against your notes and asks for a rewrite if it finds a mistake. Slower."
+        >
+          <input type="checkbox" checked={verify} onChange={(e) => setVerify(e.target.checked)} className="h-4 w-4 accent-ink" />
           Fact-check answers
         </label>
         {turns.length > 0 && (
@@ -161,7 +165,7 @@ export default function AskTab({ set }: { set: StudySet }) {
           </button>
         )}
       </div>
-      <p className="mt-2 text-xs text-stone-500">
+      <p className="mt-3 font-mono text-xs text-stone-500">
         Answers come only from your notes. The first question on an older set can take a little longer.
       </p>
     </div>

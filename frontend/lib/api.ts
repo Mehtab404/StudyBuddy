@@ -119,26 +119,30 @@ export type AskResult = {
 
 export type SetDetails ={ title: string; subject: string; level: string };
 
-// The login token lives in localStorage so it survives a refresh. Trade-off: any script running on
-// the page (e.g. from an XSS bug) could read it. httpOnly cookies avoid that but need CSRF handling.
+// The login token lives in localStorage so it survives a refresh and browser restarts ("Remember me").
+// Without "Remember me" it goes in sessionStorage instead, which the browser clears when it closes.
+// Trade-off: any script running on the page (e.g. from an XSS bug) could read it. httpOnly cookies
+// avoid that but need CSRF handling.
 const TOKEN_KEY = "study_guide_token";
 
 export const tokenStore = {
   get(): string | null {
     try {
-      return localStorage.getItem(TOKEN_KEY);
+      return localStorage.getItem(TOKEN_KEY) ?? sessionStorage.getItem(TOKEN_KEY);
     } catch {
       return null;
     }
   },
-  set(token: string) {
+  set(token: string, remember = true) {
     try {
-      localStorage.setItem(TOKEN_KEY, token);
+      tokenStore.clear();
+      (remember ? localStorage : sessionStorage).setItem(TOKEN_KEY, token);
     } catch {}
   },
   clear() {
     try {
       localStorage.removeItem(TOKEN_KEY);
+      sessionStorage.removeItem(TOKEN_KEY);
     } catch {}
   },
 };

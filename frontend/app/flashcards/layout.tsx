@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { tabClass } from "@/components/ui";
 
 const tabs = [
   { href: "/flashcards/review", label: "Review queue" },
@@ -14,15 +15,10 @@ export default function FlashcardsLayout({ children }: { children: React.ReactNo
   const pathname = usePathname();
   return (
     <div>
-      <ul className="mb-8 flex flex-wrap gap-1 border-b border-stone-200 pb-3">
+      <ul className="mb-10 flex flex-wrap gap-3 border-b-2 border-stone-300 pb-5">
         {tabs.map(({ href, label }) => (
           <li key={href}>
-            <Link
-              href={href}
-              className={`rounded-full px-4 py-1.5 text-sm transition-colors ${
-                pathname === href ? "bg-stone-800 text-white" : "text-stone-600 hover:bg-stone-100"
-              }`}
-            >
+            <Link href={href} className={tabClass(pathname === href)} aria-current={pathname === href ? "page" : undefined}>
               {label}
             </Link>
           </li>

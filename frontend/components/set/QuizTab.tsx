@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { EmptyState, ErrorBox, card, chip, errorMessage, label, primaryButton, secondaryButton, selectClass } from "@/components/ui";
 import { api, type StudySet } from "@/lib/api";
-import { EmptyState, ErrorBox, errorMessage, primaryButton, secondaryButton } from "./ui";
 
 export default function QuizTab({ set, onChange }: { set: StudySet; onChange: (s: StudySet) => void }) {
   const [count, setCount] = useState(10);
@@ -25,13 +25,9 @@ export default function QuizTab({ set, onChange }: { set: StudySet; onChange: (s
   }
 
   const countPicker = (
-    <label className="flex items-center gap-2 text-sm text-stone-600">
+    <label className="flex items-center gap-2 font-display text-sm font-bold text-ink">
       Questions
-      <select
-        value={count}
-        onChange={(e) => setCount(Number(e.target.value))}
-        className="rounded-lg border border-stone-200 bg-white px-2 py-1.5 text-stone-800"
-      >
+      <select value={count} onChange={(e) => setCount(Number(e.target.value))} className={selectClass}>
         {[5, 10, 15, 20, 30].map((n) => (
           <option key={n} value={n}>
             {n}
@@ -60,12 +56,18 @@ export default function QuizTab({ set, onChange }: { set: StudySet; onChange: (s
 
   return (
     <div>
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <p className="text-sm text-stone-600">
-          Answered {answered} of {set.quiz.length}
-          {answered > 0 && <span className="font-medium text-stone-800"> · Score {correct}/{answered}</span>}
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+        <p className="flex flex-wrap items-center gap-2">
+          <span className={label}>
+            Answered {answered} of {set.quiz.length}
+          </span>
+          {answered > 0 && (
+            <span className={`${chip} bg-sun`}>
+              Score {correct}/{answered}
+            </span>
+          )}
         </p>
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-3">
           <button onClick={() => setPicked({})} className={secondaryButton}>
             Start over
           </button>
@@ -77,34 +79,36 @@ export default function QuizTab({ set, onChange }: { set: StudySet; onChange: (s
       </div>
       <ErrorBox message={error} />
 
-      <ol className="space-y-5">
+      <ol className="space-y-6">
         {set.quiz.map((q, i) => {
           const choice = picked[i];
           const done = choice !== undefined;
           return (
-            <li key={i} className="rounded-xl border border-stone-200 bg-white p-5 shadow-sm">
-              <p className="font-medium text-stone-800">
-                {i + 1}. {q.question}
+            <li key={i} className={card}>
+              <p className="font-display text-lg font-bold text-ink">
+                <span className="mr-2 font-mono text-sm text-stone-500">{String(i + 1).padStart(2, "0")}</span>
+                {q.question}
               </p>
-              <div className="mt-3 space-y-2">
+              <div className="mt-4 space-y-2">
                 {q.options.map((opt, j) => {
-                  let style = "border-stone-200 hover:border-teal-600";
-                  if (done && j === q.answer_index) style = "border-emerald-500 bg-emerald-50 text-emerald-900";
-                  else if (done && j === choice) style = "border-rose-400 bg-rose-50 text-rose-900";
-                  else if (done) style = "border-stone-200 text-stone-400";
+                  let style = "border-ink bg-white hover:bg-yellow-50";
+                  if (done && j === q.answer_index) style = "border-ink bg-mint font-medium";
+                  else if (done && j === choice) style = "border-ink bg-rose-200";
+                  else if (done) style = "border-stone-300 bg-white text-stone-400";
                   return (
                     <button
                       key={j}
                       disabled={done}
                       onClick={() => setPicked((p) => ({ ...p, [i]: j }))}
-                      className={`block w-full rounded-lg border px-4 py-2 text-left text-sm transition-colors ${style}`}
+                      className={`flex w-full items-center gap-3 border-2 px-4 py-2.5 text-left text-ink transition-colors ${style}`}
                     >
-                      {opt}
+                      <span className="font-mono text-xs font-bold">{String.fromCharCode(65 + j)}</span>
+                      <span>{opt}</span>
                     </button>
                   );
                 })}
               </div>
-              {done && q.explanation && <p className="mt-3 text-sm text-stone-600">{q.explanation}</p>}
+              {done && q.explanation && <p className="mt-4 border-l-4 border-sun pl-3 text-stone-700">{q.explanation}</p>}
             </li>
           );
         })}

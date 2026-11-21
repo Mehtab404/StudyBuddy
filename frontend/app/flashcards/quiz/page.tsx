@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { EmptyState, ErrorBox, Loading, errorMessage, label, pageTitle, primaryButton, secondaryButton, sourceQuote, textLink } from "@/components/ui";
 import { api, type Card } from "@/lib/api";
 
 export default function QuizPage() {
@@ -17,7 +18,7 @@ export default function QuizPage() {
     api
       .dueCards()
       .then(setQueue)
-      .catch((err) => setError(err instanceof Error ? err.message : "Something went wrong"));
+      .catch((err) => setError(errorMessage(err)));
   }, []);
 
   async function answer(knew: boolean) {
@@ -31,7 +32,7 @@ export default function QuizPage() {
       setIndex((i) => i + 1);
       setRevealed(false);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
+      setError(errorMessage(err));
     } finally {
       setBusy(false);
     }
@@ -42,71 +43,62 @@ export default function QuizPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-semibold tracking-tight text-stone-800">Quiz</h1>
+      <h1 className={pageTitle}>Quiz</h1>
 
-      {error && (
-        <p role="alert" className="mt-6 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
-          {error}
-        </p>
-      )}
-
-      {!error && queue === null && <p className="mt-8 text-stone-500">Loading…</p>}
+      <ErrorBox message={error} />
+      {!error && queue === null && <Loading />}
 
       {queue && queue.length === 0 && (
-        <div className="mt-8 rounded-2xl border border-dashed border-stone-300 p-10 text-center text-stone-500">
-          Nothing is due right now.{" "}
-          <Link href="/flashcards/review" className="font-medium text-teal-700 underline underline-offset-2">
-            Approve more cards
-          </Link>{" "}
-          or come back later.
+        <div className="mt-8">
+          <EmptyState title="Nothing is due right now" text="Approve more cards, or come back later.">
+            <Link href="/flashcards/review" className={primaryButton}>
+              Approve more cards <span aria-hidden="true">→</span>
+            </Link>
+          </EmptyState>
         </div>
       )}
 
       {card && queue && (
-        <div className="mt-6">
-          <div className="mb-3 flex items-center justify-between text-sm text-stone-500">
-            <span>
+        <div className="mx-auto mt-8 max-w-3xl">
+          <div className="mb-3 flex items-center justify-between gap-4">
+            <span className={label}>
               Card {index + 1} of {queue.length}
             </span>
-            {lastInterval !== null && index > 0 && <span>Last card: back in {lastInterval} day{lastInterval === 1 ? "" : "s"}</span>}
+            {lastInterval !== null && index > 0 && (
+              <span className="font-mono text-xs text-stone-500">
+                Last card: back in {lastInterval} day{lastInterval === 1 ? "" : "s"}
+              </span>
+            )}
           </div>
-          <div className="h-1.5 overflow-hidden rounded-full bg-stone-200">
-            <div className="h-full bg-teal-600 transition-all" style={{ width: `${(index / queue.length) * 100}%` }} />
+          <div className="h-3 border-2 border-ink bg-white" role="progressbar" aria-valuemin={0} aria-valuemax={queue.length} aria-valuenow={index}>
+            <div className="h-full bg-sun transition-all" style={{ width: `${(index / queue.length) * 100}%` }} />
           </div>
 
-          <article className="mt-6 rounded-2xl border border-stone-200 bg-white p-8 shadow-sm">
-            <h2 className="text-xs font-medium uppercase tracking-wide text-stone-400">Question</h2>
-            <p className="mt-2 text-xl text-stone-800">{card.question}</p>
+          <article className="mt-8 border-2 border-ink bg-white p-8 shadow-[8px_8px_0_0_#111111] sm:p-10">
+            <h2 className={label}>Question</h2>
+            <p className="mt-3 font-display text-2xl font-bold leading-snug text-ink">{card.question}</p>
 
             {revealed && (
-              <div className="mt-8 border-t border-stone-100 pt-6">
-                <h2 className="text-xs font-medium uppercase tracking-wide text-stone-400">Answer</h2>
-                <p className="mt-2 text-lg text-stone-800">{card.answer}</p>
-                <p className="mt-4 border-l-2 border-teal-600/40 pl-3 text-sm text-stone-500 italic">{card.source}</p>
+              <div className="mt-8 border-t-2 border-stone-200 pt-6">
+                <h2 className={label}>Answer</h2>
+                <p className="mt-3 text-xl text-ink">{card.answer}</p>
+                <p className={`mt-5 text-sm ${sourceQuote}`}>{card.source}</p>
               </div>
             )}
           </article>
 
-          <div className="mt-6 flex justify-center gap-3">
+          <div className="mt-8 flex justify-center gap-4">
             {!revealed ? (
-              <button onClick={() => setRevealed(true)} className="rounded-full bg-teal-700 px-8 py-2.5 text-sm font-medium text-white hover:bg-teal-800">
+              <button onClick={() => setRevealed(true)} className={`${primaryButton} px-10 py-3 text-lg`}>
                 Show answer
               </button>
             ) : (
               <>
-                <button
-                  onClick={() => answer(false)}
-                  disabled={busy}
-                  className="rounded-full border border-stone-300 px-6 py-2.5 text-sm text-stone-700 hover:bg-stone-100 disabled:opacity-50"
-                >
+                <button onClick={() => answer(false)} disabled={busy} className={`${secondaryButton} px-6 py-3 text-base`}>
                   I didn’t know it
                 </button>
-                <button
-                  onClick={() => answer(true)}
-                  disabled={busy}
-                  className="rounded-full bg-teal-700 px-6 py-2.5 text-sm font-medium text-white hover:bg-teal-800 disabled:opacity-50"
-                >
-                  I knew it
+                <button onClick={() => answer(true)} disabled={busy} className={`${primaryButton} px-6 py-3`}>
+                  I knew it ✓
                 </button>
               </>
             )}
@@ -115,12 +107,12 @@ export default function QuizPage() {
       )}
 
       {done && queue && queue.length > 0 && (
-        <div className="mt-8 rounded-2xl border border-teal-200 bg-teal-50 p-8 text-center text-teal-900">
-          <p className="text-lg font-medium">Session complete</p>
-          <p className="mt-1 text-sm">
+        <div className="mx-auto mt-8 max-w-3xl border-2 border-ink bg-mint p-10 text-center shadow-[8px_8px_0_0_#111111]">
+          <p className="font-display text-3xl font-bold text-ink">Session complete</p>
+          <p className="mt-2 text-lg text-ink">
             You knew {knewCount} of {queue.length}. Each card has been rescheduled.
           </p>
-          <Link href="/flashcards/due" className="mt-4 inline-block text-sm font-medium underline underline-offset-2">
+          <Link href="/flashcards/due" className={`mt-6 inline-block ${textLink}`}>
             Back to due cards
           </Link>
         </div>

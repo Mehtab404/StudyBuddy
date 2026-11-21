@@ -8,6 +8,7 @@ import FlashcardsTab from "@/components/set/FlashcardsTab";
 import PaperTab from "@/components/set/PaperTab";
 import QuizTab from "@/components/set/QuizTab";
 import RevisionTab from "@/components/set/RevisionTab";
+import { ErrorBox, Loading, chip, errorMessage, pageTitle, tabClass, textLink } from "@/components/ui";
 import { api, type StudySet } from "@/lib/api";
 
 const TABS = ["Revision notes", "Quiz", "Exam paper", "Flashcards", "Ask your notes"] as const;
@@ -23,33 +24,38 @@ export default function SetPage() {
     api
       .getSet(id)
       .then(setSet)
-      .catch((err) => setError(err instanceof Error ? err.message : "Something went wrong"));
+      .catch((err) => setError(errorMessage(err)));
   }, [id]);
 
   if (error) {
     return (
-      <p role="alert" className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
-        {error}{" "}
-        <Link href="/sets" className="font-medium underline">
-          Back to my sets
+      <div>
+        <ErrorBox message={error} />
+        <Link href="/sets" className={`mt-6 inline-block ${textLink}`}>
+          ← Back to my sets
         </Link>
-      </p>
+      </div>
     );
   }
-  if (!set) return <p className="text-stone-500">Loading…</p>;
+  if (!set) return <Loading />;
 
   return (
     <div>
       <div className="no-print">
-        <Link href="/sets" className="text-sm text-stone-500 hover:text-stone-800">
+        <Link href="/sets" className="font-mono text-xs font-bold uppercase tracking-widest text-stone-500 hover:text-ink">
           ← My sets
         </Link>
-        <h1 className="mt-2 text-2xl font-semibold tracking-tight text-stone-800">{set.title}</h1>
-        {set.level && <p className="mt-1 text-sm text-stone-500">{set.level}</p>}
+        <h1 className={`mt-3 ${pageTitle}`}>{set.title}</h1>
+        {(set.subject || set.level) && (
+          <div className="mt-3 flex flex-wrap gap-2">
+            {set.subject && <span className={`${chip} bg-sun`}>{set.subject}</span>}
+            {set.level && <span className={`${chip} bg-white`}>{set.level}</span>}
+          </div>
+        )}
         {set.files.length > 1 && (
           <ul className="mt-3 flex flex-wrap gap-2" aria-label="Files in this set">
             {set.files.map((f) => (
-              <li key={f.name} className="rounded-full bg-stone-100 px-3 py-1 text-xs text-stone-600">
+              <li key={f.name} className={`${chip} ${f.name.toLowerCase().endsWith(".pdf") ? "bg-peach" : "bg-mint"} normal-case`}>
                 {f.name}
                 {f.pages ? ` · ${f.pages} page${f.pages === 1 ? "" : "s"}` : ""}
               </li>
@@ -57,15 +63,10 @@ export default function SetPage() {
           </ul>
         )}
 
-        <ul className="mt-6 flex flex-wrap gap-1 border-b border-stone-200 pb-3">
+        <ul className="mt-8 flex flex-wrap gap-3 border-b-2 border-stone-300 pb-5">
           {TABS.map((name) => (
             <li key={name}>
-              <button
-                onClick={() => setTab(name)}
-                className={`rounded-full px-4 py-1.5 text-sm transition-colors ${
-                  tab === name ? "bg-teal-700 text-white" : "text-stone-600 hover:bg-stone-100"
-                }`}
-              >
+              <button onClick={() => setTab(name)} className={tabClass(tab === name)} aria-pressed={tab === name}>
                 {name}
               </button>
             </li>
@@ -73,7 +74,7 @@ export default function SetPage() {
         </ul>
       </div>
 
-      <div className="mt-6">
+      <div className="mt-8">
         {tab === "Revision notes" && <RevisionTab set={set} onChange={setSet} />}
         {tab === "Quiz" && <QuizTab set={set} onChange={setSet} />}
         {tab === "Exam paper" && <PaperTab set={set} onChange={setSet} />}

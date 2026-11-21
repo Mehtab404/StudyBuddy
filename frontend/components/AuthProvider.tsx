@@ -6,14 +6,14 @@ import { api, tokenStore, type User } from "@/lib/api";
 
 type AuthState = {
   user: User | null;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string, remember?: boolean) => Promise<void>;
   signup: (name: string, email: string, password: string) => Promise<void>;
   logout: () => void;
 };
 
 const AuthContext = createContext<AuthState | null>(null);
 
-const PUBLIC_PATHS = ["/login", "/signup"];
+export const PUBLIC_PATHS = ["/login", "/signup"];
 
 export function useAuth() {
   const ctx = useContext(AuthContext);
@@ -51,14 +51,15 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     if (user && isPublic) router.replace("/");
   }, [ready, user, isPublic, router]);
 
-  async function finishAuth(token: string) {
-    tokenStore.set(token);
+  async function finishAuth(token: string, remember = true) {
+    tokenStore.set(token, remember);
     setUser(await api.me());
   }
 
   const value: AuthState = {
     user,
-    login: async (email, password) => finishAuth((await api.login(email, password)).access_token),
+    login: async (email, password, remember = true) =>
+      finishAuth((await api.login(email, password)).access_token, remember),
     signup: async (name, email, password) => finishAuth((await api.signup(name, email, password)).access_token),
     logout: () => {
       tokenStore.clear();

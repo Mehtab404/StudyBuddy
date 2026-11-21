@@ -1,21 +1,42 @@
 @import "tailwindcss";
 
-/* One calm light palette: warm off-white background, soft stone text */
+/* Bold "exam prep" look: off-white paper, black ink, flat bright accents and hard offset shadows */
 :root {
-  --background: #faf9f6;
-  --foreground: #292524;
+  --background: #f4f4ef;
+  --foreground: #111111;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --color-ink: #111111;
+  --color-sun: #facc15; /* yellow: primary actions, logo */
+  --color-mint: #6ee7b7; /* green: avatar, .txt chip */
+  --color-peach: #fdba74; /* orange: .pdf chip */
+  --font-sans: var(--font-inter);
+  --font-display: var(--font-space-grotesk);
+  --font-mono: var(--font-jetbrains-mono);
+  --shadow-hard: 3px 3px 0 0 #111111;
+  --shadow-hard-lg: 4px 4px 0 0 #111111;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans), system-ui, sans-serif;
+}
+
+/* Faint graph-paper lines (sign-in page left panel) */
+.bg-grid {
+  background-image:
+    linear-gradient(to right, rgb(17 17 17 / 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(17 17 17 / 0.05) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+/* Highlighter stroke behind the lower half of a word */
+.mark-sun {
+  background: linear-gradient(transparent 58%, #facc15 58%, #facc15 92%, transparent 92%);
 }
 
 /* Printing (e.g. "Save as PDF" for an exam paper): show only the .print-area */
