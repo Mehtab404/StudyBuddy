@@ -19,6 +19,7 @@ from pathlib import Path
 
 import numpy as np
 from dotenv import load_dotenv
+from pymongo import UpdateOne
 from pymongo.database import Database
 
 load_dotenv()
@@ -29,7 +30,10 @@ EMBED_MODEL = os.getenv("EMBED_MODEL", "BAAI/bge-small-en-v1.5")
 EMBED_DIM = 384  # output size of EMBED_MODEL. Change it together with the model.
 # Kept inside the project (git-ignored), not in the Windows temp folder, which gets cleaned up.
 EMBED_CACHE_DIR = os.getenv("EMBED_CACHE_DIR", str(Path(__file__).resolve().parent.parent / ".model_cache"))
-EMBED_BATCH = 32
+# Chunks embedded per model call. Peak memory grows with this number: 32 pushed the backend past Render's 512 MB limit
+# on a long PDF (the process was killed, so the browser saw "Can't reach the server"). On a CPU a smaller batch is
+# barely slower, so keep it small. Raise EMBED_BATCH in backend/.env only if you have plenty of memory.
+EMBED_BATCH = max(1, int(os.getenv("EMBED_BATCH", "4")))
 
 _model = None
 _lock = threading.Lock()
@@ -69,8 +73,15 @@ def embed_document_chunks(db: Database, document_id) -> dict:
     """Embeds every chunk of one document and stores the vectors. Returns a summary for notes.chunking."""
     rows = list(db.chunks.find({"document_id": document_id}, {"content": 1}).sort("chunk_index", 1))
     vectors = embed_texts([r["content"] for r in rows])
-    for row, vec in zip(rows, vectors):
-        db.chunks.update_one({"_id": row["_id"]}, {"$set": {"embedding": vec, "embedding_model": EMBED_MODEL}})
+    if rows:
+        # One round trip to the database instead of one per chunk (a long PDF has hundreds of chunks)
+        db.chunks.bulk_write(
+            [
+                UpdateOne({"_id": row["_id"]}, {"$set": {"embedding": vec, "embedding_model": EMBED_MODEL}})
+                for row, vec in zip(rows, vectors)
+            ],
+            ordered=False,
+        )
     return {"embedding_model": EMBED_MODEL, "embedding_dim": EMBED_DIM, "embedded_count": len(rows)}
 
 
