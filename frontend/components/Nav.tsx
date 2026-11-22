@@ -70,6 +70,7 @@ function ProfileMenu({ user, logout }: { user: User; logout: () => void }) {
                 onClick={() => {
                   // Full page load so the provider does not redirect to /login in between
                   tokenStore.clear();
+                  // eslint-disable-next-line @next/next/no-location-assign-relative-destination
                   window.location.href = "/signup";
                 }}
                 className="font-bold text-ink underline underline-offset-2"
