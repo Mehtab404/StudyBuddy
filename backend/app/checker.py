@@ -1,10 +1,8 @@
 import json
 from dataclasses import dataclass
 
-from groq import Groq
-
-from app.config import GROQ_API_KEY
 from app.flashcards import MODEL
+from app.groq_client import get_client
 from app.trace import traced_create
 
 SUPPORTED = "supported"
@@ -45,7 +43,7 @@ def check_answers(items: list[tuple[str, str]]) -> list[CheckResult]:
     payload = [{"id": i, "source": source, "answer": answer} for i, (answer, source) in enumerate(items)]
 
     try:
-        client = Groq(api_key=GROQ_API_KEY, max_retries=6)
+        client = get_client()
         completion = traced_create(
             client,
             "cards:check",

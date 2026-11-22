@@ -4,11 +4,10 @@ import math
 import re
 from concurrent.futures import ThreadPoolExecutor
 
-from groq import Groq
 from pydantic import BaseModel, Field
 
 from app import trace
-from app.config import GROQ_API_KEY
+from app.groq_client import get_client
 from app.prompts import untrusted
 from app.trace import traced_create
 
@@ -95,7 +94,7 @@ def _snap_source(source: str, sentences: list[str], loose_notes: str) -> str | N
 
 
 def _ask_model(notes: str, max_cards: int) -> list[dict]:
-    client = Groq(api_key=GROQ_API_KEY, max_retries=6)
+    client = get_client()
     completion = traced_create(
         client,
         "cards:generate",

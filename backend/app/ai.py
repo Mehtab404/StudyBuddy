@@ -1,10 +1,10 @@
 import json
 
 from fastapi import HTTPException
-from groq import Groq
 
 from app.config import GROQ_API_KEY
 from app.flashcards import MODEL
+from app.groq_client import get_client
 from app.trace import traced_create
 
 
@@ -14,7 +14,7 @@ def chat_json(system: str, user: str, *, max_tokens: int = 8000, label: str = "c
     if not GROQ_API_KEY or GROQ_API_KEY.startswith(("paste-", "your-")):
         raise HTTPException(status_code=500, detail="GROQ_API_KEY is not set in backend/.env")
     try:
-        client = Groq(api_key=GROQ_API_KEY, max_retries=6)
+        client = get_client()
         completion = traced_create(
             client,
             label,

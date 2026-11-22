@@ -33,6 +33,11 @@ RATE_LIMIT_ENABLED = os.getenv("RATE_LIMIT_ENABLED", "true").strip().lower() not
 # 0 (the default) ignores the header, which is right when nothing sits in front, such as local development.
 TRUSTED_PROXY_HOPS = max(0, int(os.getenv("TRUSTED_PROXY_HOPS", "0")))
 
+# Groq calls (app/groq_client.py). A call that gets no answer for this long is abandoned, and a failed call (rate limit,
+# server error, dropped connection) is retried at most this many times, so one request cannot hang for minutes.
+GROQ_TIMEOUT_SECONDS = float(os.getenv("GROQ_TIMEOUT_SECONDS", "90"))
+GROQ_MAX_RETRIES = max(0, int(os.getenv("GROQ_MAX_RETRIES", "3")))
+
 # DEBUG, INFO, WARNING or ERROR
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").strip().upper()
 

@@ -147,6 +147,10 @@ export const tokenStore = {
   },
 };
 
+// Longest we wait for the backend. The slowest calls (exam papers, fact-checked answers) make several AI calls in a row,
+// so this is generous; it only stops a stuck request from leaving the page spinning forever.
+const REQUEST_TIMEOUT_MS = 180_000;
+
 async function request<T>(path: string, init?: RequestInit, { auth = true } = {}): Promise<T> {
   const headers = new Headers(init?.headers);
   // JSON bodies are strings; FormData and URLSearchParams set their own content type
@@ -158,8 +162,11 @@ async function request<T>(path: string, init?: RequestInit, { auth = true } = {}
 
   let res: Response;
   try {
-    res = await fetch(`${API_URL}${path}`, { ...init, headers });
-  } catch {
+    res = await fetch(`${API_URL}${path}`, { signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS), ...init, headers });
+  } catch (err) {
+    if (err instanceof DOMException && err.name === "TimeoutError") {
+      throw new Error("The server took too long to respond. Please try again.");
+    }
     throw new Error("Can't reach the server. Is the backend running on " + API_URL + "?");
   }
 
