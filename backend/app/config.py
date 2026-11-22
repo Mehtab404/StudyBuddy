@@ -7,6 +7,9 @@ load_dotenv()
 
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
+# Model that writes the answers, cards, quizzes and papers (a Groq production model, see console.groq.com/docs/models)
+GROQ_MODEL = os.getenv("GROQ_MODEL", "openai/gpt-oss-120b").strip()
+
 # Model for the fact-checking reviewer (verify.py). Unset: the same model that writes the answers. A different model is a
 # more independent second opinion, and Groq counts the rate limit per model, so the load is split between the two.
 REVIEW_MODEL = os.getenv("REVIEW_MODEL") or None

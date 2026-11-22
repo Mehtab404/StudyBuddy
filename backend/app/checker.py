@@ -2,7 +2,7 @@ import json
 from dataclasses import dataclass
 
 from app.flashcards import MODEL
-from app.groq_client import get_client
+from app.groq_client import get_client, json_answer
 from app.trace import traced_create
 
 SUPPORTED = "supported"
@@ -49,13 +49,14 @@ def check_answers(items: list[tuple[str, str]]) -> list[CheckResult]:
             "cards:check",
             model=MODEL,
             temperature=0,
+            max_completion_tokens=4000,
             response_format={"type": "json_object"},
             messages=[
                 {"role": "system", "content": SYSTEM_PROMPT},
                 {"role": "user", "content": json.dumps(payload)},
             ],
         )
-        raw = json.loads(completion.choices[0].message.content)
+        raw = json_answer(completion)
         returned = {r["id"]: r for r in raw.get("results", []) if isinstance(r, dict) and "id" in r}
     except Exception:
         return [_unverified("Automatic check failed; please verify manually.") for _ in items]

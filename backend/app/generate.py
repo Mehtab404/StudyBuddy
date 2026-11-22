@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from pydantic import BaseModel
 from pymongo.database import Database
@@ -10,8 +12,10 @@ from app.config import GROQ_API_KEY
 from app.database import get_db
 from app.extract import MAX_UPLOAD_BYTES, ExtractError, extract_text
 from app.flashcards import MAX_NOTES_CHARS, NotesRequest, generate_flashcards
+from app.groq_client import friendly_message
 
 router = APIRouter(tags=["flashcards"])
+log = logging.getLogger("generate")
 
 MIN_NOTES_CHARS = 20
 
@@ -30,7 +34,8 @@ def generate_cards_for_note(db: Database, user: dict, note_id, notes: str, max_c
         try:
             result = generate_flashcards(notes, max_cards)
         except Exception as e:
-            raise HTTPException(status_code=502, detail=f"Flashcard generation failed: {type(e).__name__}")
+            log.warning("flashcard generation failed: %s: %s", type(e).__name__, e)
+            raise HTTPException(status_code=502, detail=friendly_message(e))
 
         # Second Groq call: does each answer contain anything the source sentence doesn't say?
         checks = check_answers([(c.answer, c.source) for c in result.cards])

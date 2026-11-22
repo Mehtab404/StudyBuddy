@@ -1,5 +1,4 @@
 import difflib
-import json
 import math
 import re
 from concurrent.futures import ThreadPoolExecutor
@@ -7,12 +6,13 @@ from concurrent.futures import ThreadPoolExecutor
 from pydantic import BaseModel, Field
 
 from app import trace
-from app.groq_client import get_client
+from app.config import GROQ_MODEL
+from app.groq_client import get_client, json_answer
 from app.prompts import untrusted
 from app.trace import traced_create
 
-# Groq production model (listed at console.groq.com/docs/models)
-MODEL = "openai/gpt-oss-120b"
+# Groq production model (listed at console.groq.com/docs/models). Override with GROQ_MODEL in backend/.env.
+MODEL = GROQ_MODEL
 
 # Long notes are split into chunks of about CHUNK_CHARS and processed in parallel
 MAX_NOTES_CHARS = 200_000
@@ -100,6 +100,7 @@ def _ask_model(notes: str, max_cards: int) -> list[dict]:
         "cards:generate",
         model=MODEL,
         temperature=0,
+        max_completion_tokens=8000,  # reasoning tokens count too; this stops a runaway answer
         response_format={"type": "json_object"},
         messages=[
             {"role": "system", "content": SYSTEM_PROMPT},
@@ -109,7 +110,7 @@ def _ask_model(notes: str, max_cards: int) -> list[dict]:
             },
         ],
     )
-    raw = json.loads(completion.choices[0].message.content)
+    raw = json_answer(completion)
     return [c for c in raw.get("cards", []) if isinstance(c, dict)]
 
 

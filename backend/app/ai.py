@@ -1,11 +1,13 @@
-import json
+import logging
 
 from fastapi import HTTPException
 
 from app.config import GROQ_API_KEY
 from app.flashcards import MODEL
-from app.groq_client import get_client
+from app.groq_client import friendly_message, get_client, json_answer
 from app.trace import traced_create
+
+log = logging.getLogger("ai")
 
 
 def chat_json(system: str, user: str, *, max_tokens: int = 8000, label: str = "chat", model: str | None = None) -> dict:
@@ -25,11 +27,11 @@ def chat_json(system: str, user: str, *, max_tokens: int = 8000, label: str = "c
             response_format={"type": "json_object"},
             messages=[{"role": "system", "content": system}, {"role": "user", "content": user}],
         )
-        data = json.loads(completion.choices[0].message.content)
+        data = json_answer(completion)
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=502, detail=f"AI request failed: {type(e).__name__}")
-    if not isinstance(data, dict):
-        raise HTTPException(status_code=502, detail="AI returned an unexpected answer. Please try again.")
+        # The details go to the server log; the user gets a plain message without internal class names
+        log.warning("AI call %r failed: %s: %s", label, type(e).__name__, e)
+        raise HTTPException(status_code=502, detail=friendly_message(e))
     return data
