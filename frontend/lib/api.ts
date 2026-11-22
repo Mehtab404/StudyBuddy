@@ -214,6 +214,9 @@ export const api = {
     ),
   me: () => request<User>("/auth/me"),
   guest: () => request<Token>("/auth/guest", { method: "POST" }, { auth: false }),
+  // Turns the signed-in guest into a real account (same user, so their sets stay). Needs the guest's token.
+  upgrade: (name: string, email: string, password: string) =>
+    request<Token>("/auth/upgrade", { method: "POST", body: JSON.stringify({ name, email, password }) }),
 
   generate: (notes: string, maxCards: number) =>
     request<GenerateResult>("/flashcards", {

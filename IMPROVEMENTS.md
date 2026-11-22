@@ -189,7 +189,7 @@ Items are grouped by priority. Effort is a rough guess: **S** = under an hour, *
 ## 7. Product features
 
 ### 7.1 Accounts
-- **Turn a guest into a real account (M).** Add `POST /auth/upgrade`, which sets the email, name and password on the existing guest user and clears `is_guest`. All data is keyed by user id, so the guest's sets carry over automatically. This is the most useful follow-up to guest mode.
+- **Turn a guest into a real account (M). [DONE]** Add `POST /auth/upgrade`, which sets the email, name and password on the existing guest user and clears `is_guest`. All data is keyed by user id, so the guest's sets carry over automatically. This is the most useful follow-up to guest mode.
 - **Password reset by email (M).** Users who forget their password are currently locked out for good. This needs an email provider such as Resend or SendGrid.
 - **Change password and delete account (S).** Deleting an account should also delete the user's data, which helps with privacy and GDPR.
 - **Email verification (M).**

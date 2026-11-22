@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/components/AuthProvider";
 import Logo from "@/components/Logo";
-import { tokenStore, type User } from "@/lib/api";
+import type { User } from "@/lib/api";
 
 const links = [
   { href: "/", label: "New set", match: (p: string) => p === "/" },
@@ -65,19 +65,10 @@ function ProfileMenu({ user, logout }: { user: User; logout: () => void }) {
           {user.is_guest ? (
             <p className="mt-3 text-xs text-stone-600">
               Your sets are deleted after 24 hours.{" "}
-              <button
-                type="button"
-                onClick={() => {
-                  // Full page load so the provider does not redirect to /login in between
-                  tokenStore.clear();
-                  // eslint-disable-next-line @next/next/no-location-assign-relative-destination
-                  window.location.href = "/signup";
-                }}
-                className="font-bold text-ink underline underline-offset-2"
-              >
-                Sign up
-              </button>{" "}
-              to keep an account (guest sets are not carried over).
+              <Link href="/upgrade" onClick={() => setOpen(false)} className="font-bold text-ink underline underline-offset-2">
+                Create a free account
+              </Link>{" "}
+              to keep them.
             </p>
           ) : (
             since && <p className="mt-3 font-mono text-[11px] uppercase tracking-wider text-stone-500">Member since {since}</p>

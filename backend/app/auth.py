@@ -79,23 +79,54 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Database = Depends
     return user
 
 
-@router.post("/signup", response_model=TokenOut, status_code=201)
-def signup(body: SignupIn, db: Database = Depends(get_db)):
+def _taken() -> HTTPException:
+    return HTTPException(status_code=409, detail="An account with this email already exists")
+
+
+def _clean_signup(body: SignupIn, db: Database) -> tuple[str, str]:
+    """The normalized email and the trimmed name from a signup form. Raises if the name is blank or the email is in use."""
     email = _normalize_email(body.email)
     name = body.name.strip()
     if not name:
         raise HTTPException(status_code=422, detail="Please enter your name")
-    taken = HTTPException(status_code=409, detail="An account with this email already exists")
     if db.users.find_one({"email": email}, {"_id": 1}):
-        raise taken
+        raise _taken()
+    return email, name
 
+
+@router.post("/signup", response_model=TokenOut, status_code=201)
+def signup(body: SignupIn, db: Database = Depends(get_db)):
+    email, name = _clean_signup(body, db)
     try:
         result = db.users.insert_one(
             {"name": name, "email": email, "password_hash": hasher.hash(body.password), "created_at": now()}
         )
     except DuplicateKeyError:  # two signups with the same email raced past the check above
-        raise taken
+        raise _taken()
     return TokenOut(access_token=create_access_token(str(result.inserted_id)))
+
+
+@router.post("/upgrade", response_model=TokenOut)
+def upgrade(body: SignupIn, user: dict = Depends(get_current_user), db: Database = Depends(get_db)):
+    """Turns the signed-in guest into a real account. It is the same user, so every set, card and chunk the guest made
+    stays attached. Returns a new, full-length token, because the guest's own token expires with the guest data."""
+    not_a_guest = HTTPException(status_code=409, detail="This account is already registered")
+    if not user.get("is_guest"):
+        raise not_a_guest
+    email, name = _clean_signup(body, db)
+    try:
+        result = db.users.update_one(
+            {"_id": user["_id"], "is_guest": True},  # the filter also stops two upgrades racing each other
+            {
+                "$set": {"name": name, "email": email, "password_hash": hasher.hash(body.password), "created_at": now()},
+                "$unset": {"is_guest": ""},  # no longer a guest, so the clean-up of expired guests skips it
+            },
+        )
+    except DuplicateKeyError:
+        raise _taken()
+    if result.matched_count == 0:
+        raise not_a_guest
+    return TokenOut(access_token=create_access_token(str(user["_id"])))
 
 
 @router.post("/login", response_model=TokenOut)

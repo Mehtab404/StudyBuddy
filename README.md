@@ -141,7 +141,7 @@ To stop password guessing and protect the Groq quota, each client gets a limited
 
 | Routes | Limit | Counted per |
 |---|---|---|
-| `/auth/login`, `/auth/signup` | 10 per minute | IP address |
+| `/auth/login`, `/auth/signup`, `/auth/guest`, `/auth/upgrade` | 10 per minute | IP address |
 | `/auth/login` with a wrong password | 10 failures per 15 minutes, then that account is locked for the rest of the 15 minutes | email address |
 | AI: `/flashcards`, `/sets/{id}/ask`, `/revision`, `/quiz`, `/paper`, `/flashcards` | 15 per minute | logged-in user |
 | Indexing: `POST /sets`, `/sets/upload`, `/sets/{id}/chunks/rebuild`, `/embed` | 10 per minute | logged-in user |
@@ -215,6 +215,7 @@ push to `main` and on pull requests.
 | Endpoint | What it does |
 |---|---|
 | `POST /auth/signup`, `POST /auth/login`, `GET /auth/me` | Accounts |
+| `POST /auth/guest`, `POST /auth/upgrade` | Start a temporary guest session (deleted after 24 hours), and turn the signed-in guest into a real account, keeping its sets |
 | `POST /sets`, `POST /sets/upload` | Create a set from pasted text, or from 1 to 3 uploaded files |
 | `POST /sets/{id}/revision`, `/quiz`, `/paper`, `/flashcards` | Generate study material |
 | `POST /sets/{id}/ask` | Ask your notes (`history`, `mode`, `verify` options) |

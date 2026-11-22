@@ -9,6 +9,7 @@ type AuthState = {
   login: (email: string, password: string, remember?: boolean) => Promise<void>;
   signup: (name: string, email: string, password: string) => Promise<void>;
   guest: () => Promise<void>;
+  upgrade: (name: string, email: string, password: string) => Promise<void>;
   logout: () => void;
 };
 
@@ -64,6 +65,8 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     signup: async (name, email, password) => finishAuth((await api.signup(name, email, password)).access_token),
     // Session-only token: closing the browser ends the guest session
     guest: async () => finishAuth((await api.guest()).access_token, false),
+    // Replaces the guest's short-lived, tab-only token with a normal one
+    upgrade: async (name, email, password) => finishAuth((await api.upgrade(name, email, password)).access_token),
     logout: () => {
       tokenStore.clear();
       setUser(null);
