@@ -10,10 +10,14 @@ services:
     buildCommand: >-
       pip install -r requirements.txt &&
       python -c "from app.embeddings import EMBED_MODEL, EMBED_CACHE_DIR; from fastembed import TextEmbedding; TextEmbedding(model_name=EMBED_MODEL, cache_dir=EMBED_CACHE_DIR)"
-    # --proxy-headers: read the visitor's IP from Render's proxy, so per-IP limits apply per visitor, not to everyone
-    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT --proxy-headers --forwarded-allow-ips="*"
+    # TRUSTED_PROXY_HOPS=1: Render's proxy appends the visitor's address to X-Forwarded-For. The rate limiter reads it
+    # itself, taking the last entry. uvicorn's --proxy-headers is left off because with a trusted "*" it would take
+    # the first entry, which the visitor can set to anything.
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
     healthCheckPath: /health
     envVars:
+      - key: TRUSTED_PROXY_HOPS
+        value: 1
       - key: PYTHON_VERSION
         value: 3.14.7
       - key: GROQ_API_KEY

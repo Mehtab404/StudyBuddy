@@ -28,6 +28,11 @@ ENABLE_DEBUG = os.getenv("ENABLE_DEBUG", "").strip().lower() in ("1", "true", "y
 # Per-client request limits (app/ratelimit.py). On unless RATE_LIMIT_ENABLED=false.
 RATE_LIMIT_ENABLED = os.getenv("RATE_LIMIT_ENABLED", "true").strip().lower() not in ("0", "false", "no")
 
+# How many reverse proxies sit in front of this app and add to X-Forwarded-For (Render: 1). The visitor's IP for rate
+# limits is the entry that many places from the right, because anything further left can be written by the visitor.
+# 0 (the default) ignores the header, which is right when nothing sits in front, such as local development.
+TRUSTED_PROXY_HOPS = max(0, int(os.getenv("TRUSTED_PROXY_HOPS", "0")))
+
 # DEBUG, INFO, WARNING or ERROR
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").strip().upper()
 

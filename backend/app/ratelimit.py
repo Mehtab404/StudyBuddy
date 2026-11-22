@@ -18,7 +18,7 @@ import jwt
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
-from app.config import JWT_SECRET, RATE_LIMIT_ENABLED
+from app.config import JWT_SECRET, RATE_LIMIT_ENABLED, TRUSTED_PROXY_HOPS
 
 log = logging.getLogger("ratelimit")
 
@@ -68,8 +68,15 @@ _SWEEP_EVERY = 300  # seconds between removing clients that have gone quiet
 
 
 def _client_ip(request: Request) -> str:
-    # Behind a proxy (Render, nginx), run uvicorn with --proxy-headers so this is the visitor's address, not the proxy's
-    return request.client.host if request.client else "unknown"
+    peer = request.client.host if request.client else "unknown"
+    if TRUSTED_PROXY_HOPS == 0:
+        return peer
+    # Each proxy appends the address it received the request from, so the visitor's address is the one TRUSTED_PROXY_HOPS
+    # places from the right. Entries further left were written by the visitor and could be anything.
+    hops = [h.strip() for value in request.headers.getlist("x-forwarded-for") for h in value.split(",") if h.strip()]
+    if len(hops) < TRUSTED_PROXY_HOPS:
+        return peer  # header missing or too short: the request did not come through the proxy, so use the real peer
+    return hops[-TRUSTED_PROXY_HOPS]
 
 
 def _user_key(request: Request) -> str | None:

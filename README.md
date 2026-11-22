@@ -146,8 +146,14 @@ To stop password guessing and protect the Groq quota, each client gets a limited
 | AI: `/flashcards`, `/sets/{id}/ask`, `/revision`, `/quiz`, `/paper`, `/flashcards` | 15 per minute | logged-in user |
 | Indexing: `POST /sets`, `/sets/upload`, `/sets/{id}/chunks/rebuild`, `/embed` | 10 per minute | logged-in user |
 
-The counts are kept in memory, so they apply per server process. Behind a proxy or load balancer, start uvicorn with
-`--proxy-headers` so the limits see each visitor's real IP address.
+The counts are kept in memory, so they apply per server process. Behind a reverse proxy, set `TRUSTED_PROXY_HOPS` to the
+number of proxies in front of the app (Render: `1`, already set in `render.yaml`). The limiter then takes the visitor's
+IP from that position counted from the right of `X-Forwarded-For`, because the entries on the left are written by the
+visitor and can be faked. Leave it at `0` when nothing sits in front, such as local development.
+
+To check the value after deploying, trigger a limit (for example 11 guest requests in a minute) and read the
+`rate limit hit: ... key=ip:...` line in the server log. It should show your own IP address. If it shows the same address
+for every visitor, there is an extra proxy in front, so raise `TRUSTED_PROXY_HOPS` by one.
 
 The frontend reads `NEXT_PUBLIC_API_URL` (default `http://localhost:8000`).
 
