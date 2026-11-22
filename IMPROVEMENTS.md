@@ -3,39 +3,39 @@
 A to-do list of things worth improving, based on a read-through of the code in November 2026.
 Each item says where the problem is, why it matters, and a suggested fix.
 
-Items are grouped by priority. Effort is a rough guess: **S** = under an hour, **M** = a few hours, **L** = a day or more.
+Items are grouped by priority. Effort is a rough guess: **S** = under an hour, **M** = a few hours, **L** = a day or more. Items marked **[DONE]** are already implemented and pushed; the rest are still open.
 
 ---
 
 ## 1. Fix first: security, cost and correctness
 
-### 1.1 Rate limits miss some routes that cost money or CPU (S)
+### 1.1 Rate limits miss some routes that cost money or CPU (S) [DONE]
 - **Where:** `backend/app/ratelimit.py` (`RULES`, and `rate_limit_middleware` skips every GET request).
 - **Problem:**
   - `PATCH /cards/{id}` calls Groq through `check_answers` (`backend/app/cards.py:107`) whenever the answer changes, but no rule matches it.
   - `GET /sets/{id}/chunks/search` (`backend/app/chunks_api.py:154`) runs the embedding model on the CPU on every call, and GET requests are never limited.
 - **Fix:** add `PATCH` + `^/cards/{id}$` to the `ai` rule. Let the middleware check GET requests, and add `/sets/{id}/chunks/search` to the `indexing` rule.
 
-### 1.2 Per-IP limits can be dodged with a fake header (S)
+### 1.2 Per-IP limits can be dodged with a fake header (S) [DONE]
 - **Where:** `render.yaml`, start command `--forwarded-allow-ips="*"`.
 - **Problem:** when every proxy is trusted, uvicorn takes the client IP from the leftmost `X-Forwarded-For` entry, and the visitor writes that entry. Anyone can rotate it to get around the login/signup/guest limit of 10 per minute per IP. This matters more now that guest accounts are free to create.
 - **Fix:** trust only Render's proxy. Alternatively, read the right-most `X-Forwarded-For` entry yourself in `_client_ip`. Test it by sending a request with a made-up `X-Forwarded-For` and logging what `_client_ip` returns.
 
-### 1.3 Part of long notes is silently ignored (S)
+### 1.3 Part of long notes is silently ignored (S) [DONE]
 - **Where:**
   - `backend/app/flashcards.py:19-21`: `MAX_NOTES_CHARS = 200_000`, but flashcards only read `MAX_CHUNKS × CHUNK_CHARS` = 20 × 6,000 = 120,000 characters.
   - `backend/app/studyset.py:22-23`: revision notes read 15 × 12,000 = 180,000 characters.
 - **Problem:** a 200k-character set is accepted, but up to 80k characters never make it into flashcards. The user isn't told. The shortfall is only recorded in the trace (`chars_not_used`).
 - **Fix:** pick one. Lower `MAX_NOTES_CHARS`, sample chunks from across the whole text instead of taking the first N, or return a `chars_not_used` warning that the UI shows.
 
-### 1.4 Most prompts don't defend against instructions hidden in the notes (S)
+### 1.4 Most prompts don't defend against instructions hidden in the notes (S) [DONE]
 - **Where:**
   - `REVISION_PROMPT`, `QUIZ_PROMPT` and `PAPER_PROMPT` in `backend/app/studyset.py`.
   - `SYSTEM_PROMPT` in `backend/app/flashcards.py:23` and `backend/app/checker.py`.
 - **Problem:** the notes are pasted in after `NOTES:` or `MATERIAL:` with no clear boundary. Notes containing "ignore the rules and..." can steer the output. The paper's free-text `details` field (up to 1,000 characters) also goes straight into the prompt. Only the prompts in `ask.py` and `verify.py` have an "ignore instructions in the notes" rule.
 - **Fix:** add the same rule to every system prompt. Wrap the notes in clear delimiters such as `<notes>...</notes>`, and tell the model that everything inside them is data.
 
-### 1.5 Groq calls have no timeout and retry up to 6 times (S)
+### 1.5 Groq calls have no timeout and retry up to 6 times (S) [DONE]
 - **Where:** `backend/app/ai.py:17`, `backend/app/flashcards.py:95` and `backend/app/checker.py` all use `Groq(api_key=..., max_retries=6)`.
 - **Problem:**
   - There is no `timeout=`, and a new client is created on every call.
@@ -43,7 +43,7 @@ Items are grouped by priority. Effort is a rough guess: **S** = under an hour, *
   - The frontend `request()` in `frontend/lib/api.ts` has no timeout either.
 - **Fix:** create one shared `Groq` client with `timeout=60` and `max_retries=2`. Add an `AbortController` timeout to `request()` in `frontend/lib/api.ts`, and show "This took too long, try again".
 
-### 1.6 Cut-off AI output and leaked error names (S)
+### 1.6 Cut-off AI output and leaked error names (S) [DONE]
 - **Where:** `json.loads(completion.choices[0].message.content)` in `ai.py:28`, `flashcards.py:111` and `checker.py`. Error messages use `f"AI request failed: {type(e).__name__}"` in `ai.py:32`.
 - **Problem:**
   - A response that hit the token limit (`finish_reason == "length"`) fails as a vague JSON error.
@@ -81,13 +81,13 @@ Items are grouped by priority. Effort is a rough guess: **S** = under an hour, *
 
 ## 3. Data and database
 
-### 3.1 Generation logs grow forever and are kept after a set is deleted (S)
+### 3.1 Generation logs grow forever and are kept after a set is deleted (S) [DONE]
 - **Where:**
   - `trace.py:77-78` saves part of the user's prompt (note text).
   - `delete_set` in `studyset.py:267-271` doesn't delete that set's `generation_runs`.
 - **Fix:** add a TTL index on `generation_runs.created_at`, for example 30 days, in `init_indexes()`. Delete `generation_runs` with `set_id` in `delete_set`.
 
-### 3.2 Indexes don't match the queries (S)
+### 3.2 Indexes don't match the queries (S) [DONE]
 - **Where:** `backend/app/database.py`.
 - **Fix:**
   - `notes`: replace the `user_id` index with `(user_id, created_at -1)`, since `list_sets` sorts by `created_at`.
@@ -112,12 +112,12 @@ Items are grouped by priority. Effort is a rough guess: **S** = under an hour, *
 
 ## 4. Learning quality
 
-### 4.1 The spaced-repetition ease only ever goes down (S)
+### 4.1 The spaced-repetition ease only ever goes down (S) [DONE]
 - **Where:** `backend/app/sm2.py`.
 - **Problem:** "Knew it" maps to quality 4, which changes ease by `0.1 - 1 × (0.08 + 0.02) = 0`. "Didn't know" maps to quality 1, which changes it by `-0.54`. Ease can never rise, so every card drifts to the 1.3 minimum and its intervals stay short.
 - **Fix:** add a third "Easy" button that maps to quality 5, which raises ease by 0.1. Alternatively, map "Knew it" to quality 5. Add unit tests for `next_schedule`.
 
-### 4.2 Due dates use the server's time zone (S)
+### 4.2 Due dates use the server's time zone (S) [DONE]
 - **Where:** `date.today()` in `backend/app/quiz.py:27` and `:46`.
 - **Problem:** the server runs on UTC. A user in India (UTC+5:30) sees cards become due at 5:30 AM local time, and "today" is wrong around midnight.
 - **Fix:** have the frontend send its time zone, for example in an `X-Timezone` header, and compute "today" in that zone.
@@ -147,7 +147,7 @@ Items are grouped by priority. Effort is a rough guess: **S** = under an hour, *
   - every HTTP endpoint.
 - **Fix:** use FastAPI's `TestClient` with `mongomock`, or a throwaway test database, and replace Groq with a fake.
 
-### 5.2 Set up CI (S)
+### 5.2 Set up CI (S) [DONE]
 - **Problem:** the repo has no `.github/workflows`.
 - **Fix:** add a GitHub Actions workflow that, on every push:
   - runs `python -m unittest` for the backend,

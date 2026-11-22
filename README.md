@@ -201,11 +201,14 @@ Render restarts the service. Sign up on the Vercel site to check everything work
 
 ```bash
 cd backend
-python -m unittest discover -s tests          # 84 tests, no server or AI key needed
+python -m unittest discover -s tests          # 96 tests, no server or AI key needed (the first run downloads the ~100 MB embedding model)
 python eval_retrieval.py --show-misses        # compare keyword, vector and hybrid search
 python eval_retrieval.py --chunk-size 800 --chunk-overlap 133   # try other chunk settings
 python eval_answers.py --limit 8              # full answer pipeline on a few questions (uses the Groq API)
 ```
+
+GitHub Actions (`.github/workflows/ci.yml`) runs the backend tests, and the frontend type-check, lint and build, on every
+push to `main` and on pull requests.
 
 ## Main API endpoints
 
