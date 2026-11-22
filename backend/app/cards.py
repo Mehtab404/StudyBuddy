@@ -1,7 +1,9 @@
 from datetime import date, datetime
+import re
 from typing import Literal
 
-from fastapi import APIRouter, Depends, HTTPException
+from bson import ObjectId
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 from pymongo import ReturnDocument
 from pymongo.database import Database
@@ -10,6 +12,7 @@ from app.auth import get_current_user
 from app.checker import check_answers
 from app.database import get_db
 from app.models import CardStatus, parse_id
+from app.pagination import Page, after, decode_cursor, encode_cursor, trim
 
 router = APIRouter(prefix="/cards", tags=["cards"])
 
@@ -67,15 +70,37 @@ def _update_card(db: Database, card: dict, changes: dict) -> dict:
     return db.cards.find_one_and_update({"_id": card["_id"]}, {"$set": changes}, return_document=ReturnDocument.AFTER)
 
 
-@router.get("", response_model=list[CardOut])
+DEFAULT_PAGE = 50
+MAX_PAGE = 100
+
+
+def card_cursor(doc: dict, field: str) -> str:
+    return encode_cursor(doc[field], doc["_id"])
+
+
+@router.get("", response_model=Page[CardOut])
 def list_cards(
     status: CardStatus = CardStatus.pending,
+    q: str | None = Query(default=None, max_length=200, description="Only cards whose question, answer or source contain this text"),
+    limit: int = Query(default=DEFAULT_PAGE, ge=1, le=MAX_PAGE),
+    cursor: str | None = None,
     db: Database = Depends(get_db),
     user: dict = Depends(get_current_user),
 ):
-    """Lists your cards with the given status (default: pending), oldest first."""
-    cursor = db.cards.find({"user_id": user["_id"], "status": status.value}).sort([("created_at", 1), ("_id", 1)])
-    return [card_out(doc) for doc in cursor]
+    """Your cards with the given status (default: pending), oldest first, one page at a time."""
+    query: dict = {"user_id": user["_id"], "status": status.value}
+    if q and q.strip():
+        pattern = {"$regex": re.escape(q.strip()), "$options": "i"}  # escaped: the user's text is never a pattern
+        query["$or"] = [{"question": pattern}, {"answer": pattern}, {"source": pattern}]
+    total = db.cards.count_documents(query)
+
+    page_query = query
+    if cursor:
+        created_at, oid = decode_cursor(cursor, datetime, ObjectId)
+        page_query = {"$and": [query, after("created_at", 1, created_at, oid)]}
+    docs = list(db.cards.find(page_query).sort([("created_at", 1), ("_id", 1)]).limit(limit + 1))
+    docs, more = trim(docs, limit)
+    return Page(items=[card_out(d) for d in docs], next_cursor=card_cursor(docs[-1], "created_at") if more else None, total=total)
 
 
 @router.post("/{card_id}/approve", response_model=CardOut)
@@ -107,3 +132,10 @@ def edit_card(
         [result] = check_answers([(edit.answer, card["source"])])
         changes["check_status"], changes["check_reason"] = result.status, result.reason
     return card_out(_update_card(db, card, changes) if changes else card)
+
+
+@router.delete("/{card_id}", status_code=204)
+def delete_card(card_id: str, db: Database = Depends(get_db), user: dict = Depends(get_current_user)):
+    """Permanently deletes one card, whatever its status."""
+    card = get_owned_card(db, card_id, user)
+    db.cards.delete_one({"_id": card["_id"]})

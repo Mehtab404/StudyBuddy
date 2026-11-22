@@ -38,7 +38,7 @@ from app.config import REVIEW_MODEL  # noqa: E402
 from app.embeddings import EMBED_MODEL, embed_query  # noqa: E402
 from app.retrieval import retrieve  # noqa: E402
 from app.verify import MAX_ATTEMPTS, Draft, verify_loop  # noqa: E402
-from eval_retrieval import _norm, build_rows, load_eval_set  # noqa: E402
+from eval_retrieval import EVAL_SET, _norm, build_rows, load_eval_set  # noqa: E402
 
 RETRIES = 6  # a question that hit the rate limit is run again, after waiting
 WAIT_SECONDS = 30  # the limit is per minute, so half a minute usually clears it
@@ -187,9 +187,10 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Evaluate the full answer pipeline")
     parser.add_argument("--limit", type=int, help="only the first N answerable questions (and 2 unanswerable)")
     parser.add_argument("--save", help="write results to this JSON file")
+    parser.add_argument("--questions", type=Path, default=EVAL_SET, help="a question file (default: samples/eval_questions.json)")
     args = parser.parse_args()
 
-    data = load_eval_set()
+    data = load_eval_set(args.questions)
     rows = build_rows(data["document"], CHUNK_SIZE, CHUNK_OVERLAP)
     questions, unanswerable = data["questions"], data["unanswerable"]
     if args.limit:

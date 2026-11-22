@@ -18,6 +18,7 @@ from app.database import get_db, init_indexes
 from app.debug import router as debug_router
 from app.generate import router as generate_router
 from app.quiz import router as quiz_router
+from app.quizlog import router as quizlog_router
 from app.ratelimit import rate_limit_middleware
 from app.studyset import router as studyset_router
 
@@ -64,14 +65,15 @@ app.add_middleware(BaseHTTPMiddleware, dispatch=log_requests)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=FRONTEND_ORIGINS,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PATCH", "DELETE"],
+    allow_headers=["Authorization", "Content-Type", "X-Client-Date"],
 )
 
 app.include_router(auth_router)
 app.include_router(generate_router)
 app.include_router(cards_router)
 app.include_router(quiz_router)
+app.include_router(quizlog_router)
 app.include_router(studyset_router)
 app.include_router(chunks_router)
 app.include_router(ask_router)

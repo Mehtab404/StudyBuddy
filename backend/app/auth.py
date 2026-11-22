@@ -76,6 +76,11 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Database = Depends
     user = db.users.find_one({"_id": user_id}) if user_id else None
     if user is None:
         raise unauthorized
+    # A password change ends every login made before it, so a stolen token stops working. Tokens count whole seconds,
+    # so one made in the same second as the change still passes; the new token the change returns passes too.
+    changed = user.get("password_changed_at")
+    if changed is not None and payload.get("iat", 0) < int(changed.timestamp()):
+        raise unauthorized
     return user
 
 
@@ -174,9 +179,17 @@ def me(user: dict = Depends(get_current_user)):
 
 
 # Collections that hold a user's data, each keyed by user_id
-_USER_DATA = ("cards", "chunks", "generation_runs", "notes")
+_USER_DATA = ("cards", "chunks", "generation_runs", "quiz_attempts", "notes")
 _PURGE_EVERY = 10 * 60  # seconds between clean-ups triggered by new guests
 _last_purge = 0.0
+
+
+def delete_users(db: Database, ids: list) -> None:
+    """Deletes these accounts together with all their sets, cards, chunks and logs."""
+    for name in _USER_DATA:
+        db[name].delete_many({"user_id": {"$in": ids}})
+    # The account goes last, so a delete that stops half way can be run again
+    db.users.delete_many({"_id": {"$in": ids}})
 
 
 def purge_expired_guests(db: Database) -> int:
@@ -185,11 +198,64 @@ def purge_expired_guests(db: Database) -> int:
     ids = [u["_id"] for u in db.users.find({"is_guest": True, "created_at": {"$lt": cutoff}}, {"_id": 1})]
     if not ids:
         return 0
-    for name in _USER_DATA:
-        db[name].delete_many({"user_id": {"$in": ids}})
-    # The account goes last, so a clean-up that stops half way is retried next time
-    db.users.delete_many({"_id": {"$in": ids}})
+    delete_users(db, ids)
     return len(ids)
+
+
+def _check_current_password(user: dict, password: str) -> None:
+    """Raises unless `password` is this user's. A wrong guess counts toward the account's failed-login lockout, so a
+    stolen token cannot be used to guess the password.
+
+    A wrong password is a 403, not a 401: the frontend treats every 401 as an expired login and signs the user out."""
+    email = user["email"]
+    wait = login_blocked_for(email)
+    if wait is not None:
+        raise HTTPException(
+            status_code=429,
+            detail=f"Too many wrong passwords for this account. Please wait {(wait + 59) // 60} minutes and try again.",
+            headers={"Retry-After": str(wait)},
+        )
+    try:
+        hasher.verify(user.get("password_hash") or _DUMMY_HASH, password)
+        ok = user.get("password_hash") is not None
+    except (VerificationError, InvalidHashError):
+        ok = False
+    if not ok:
+        record_failed_login(email)
+        raise HTTPException(status_code=403, detail="Incorrect password")
+
+
+class ChangePasswordIn(BaseModel):
+    current_password: str = Field(min_length=1, max_length=128)
+    new_password: str = Field(min_length=8, max_length=128)
+
+
+@router.post("/password", response_model=TokenOut)
+def change_password(body: ChangePasswordIn, user: dict = Depends(get_current_user), db: Database = Depends(get_db)):
+    """Changes the password. Every other login (token) of this account stops working; the response has a new one."""
+    if user.get("is_guest"):
+        raise HTTPException(status_code=409, detail="Guest accounts have no password. Create an account first.")
+    _check_current_password(user, body.current_password)
+    if body.new_password == body.current_password:
+        raise HTTPException(status_code=422, detail="Choose a password that is different from the current one")
+    db.users.update_one(
+        {"_id": user["_id"]},
+        {"$set": {"password_hash": hasher.hash(body.new_password), "password_changed_at": now()}},
+    )
+    return TokenOut(access_token=create_access_token(str(user["_id"])))
+
+
+class DeleteAccountIn(BaseModel):
+    password: str | None = Field(default=None, max_length=128)  # not needed for a guest, who has none
+
+
+@router.post("/delete-account", status_code=204)
+def delete_account(body: DeleteAccountIn, user: dict = Depends(get_current_user), db: Database = Depends(get_db)):
+    """Permanently deletes the account and everything in it: sets, cards, chunks and logs. It is a POST, not a DELETE,
+    because it carries the password in a body."""
+    if not user.get("is_guest"):
+        _check_current_password(user, body.password or "")
+    delete_users(db, [user["_id"]])
 
 
 @router.post("/guest", response_model=TokenOut, status_code=201)

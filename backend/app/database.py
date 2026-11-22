@@ -46,6 +46,8 @@ def init_indexes():
     db.cards.create_index([("user_id", ASCENDING), ("check_status", ASCENDING)])
     db.generation_runs.create_index([("user_id", ASCENDING), ("created_at", -1)])
     db.generation_runs.create_index("set_id")
+    db.quiz_attempts.create_index([("set_id", ASCENDING), ("created_at", -1)])  # a set's history, newest first
+    db.quiz_attempts.create_index("user_id")  # deleting an account
     _ensure_ttl_index(db.generation_runs, "created_at", GENERATION_RUN_TTL_DAYS)
     db.chunks.create_index([("document_id", ASCENDING), ("chunk_index", ASCENDING)], unique=True)
     db.chunks.create_index("user_id")

@@ -1,13 +1,15 @@
 from datetime import date, datetime, timezone
 
-from fastapi import APIRouter, Depends, Header, HTTPException
+from bson import ObjectId
+from fastapi import APIRouter, Depends, Header, HTTPException, Query
 from pydantic import BaseModel
 from pymongo.database import Database
 
 from app.auth import get_current_user
-from app.cards import CardOut, _update_card, card_out, get_owned_card
+from app.cards import DEFAULT_PAGE, MAX_PAGE, CardOut, _update_card, card_cursor, card_out, get_owned_card
 from app.database import get_db
 from app.models import CardStatus
+from app.pagination import Page, after, decode_cursor, trim
 from app.sm2 import next_schedule
 
 router = APIRouter(tags=["quiz"])
@@ -34,22 +36,33 @@ def users_today(client_date: str | None) -> date:
     return claimed if abs((claimed - utc_today).days) <= 1 else utc_today
 
 
-@router.get("/quiz/due", response_model=list[CardOut])
+@router.get("/quiz/due", response_model=Page[CardOut])
 def cards_due_today(
     x_client_date: str | None = Header(default=None),
+    limit: int = Query(default=DEFAULT_PAGE, ge=1, le=MAX_PAGE),
+    cursor: str | None = None,
     db: Database = Depends(get_db),
     user: dict = Depends(get_current_user),
 ):
-    """Your approved cards that are due today or overdue (never-reviewed cards count as due)."""
+    """Your approved cards that are due today or overdue (never-reviewed cards count as due), one page at a time.
+
+    Reviewing a card moves its due date into the future, so asking for the first page again after a study session gives
+    the next cards without a cursor."""
     # ISO date strings compare correctly as text. {"due_date": None} would also match a missing field.
     query = {
         "user_id": user["_id"],
         "status": CardStatus.approved.value,
         "$or": [{"due_date": None}, {"due_date": {"$lte": users_today(x_client_date).isoformat()}}],
     }
+    total = db.cards.count_documents(query)
+    page_query = query
+    if cursor:
+        due_date, oid = decode_cursor(cursor, (str, type(None)), ObjectId)
+        page_query = {"$and": [query, after("due_date", 1, due_date, oid)]}
     # Mongo sorts null before any string, so never-reviewed cards come first
-    cursor = db.cards.find(query).sort([("due_date", 1), ("_id", 1)])
-    return [card_out(doc) for doc in cursor]
+    docs = list(db.cards.find(page_query).sort([("due_date", 1), ("_id", 1)]).limit(limit + 1))
+    docs, more = trim(docs, limit)
+    return Page(items=[card_out(d) for d in docs], next_cursor=card_cursor(docs[-1], "due_date") if more else None, total=total)
 
 
 @router.post("/cards/{card_id}/review", response_model=CardOut)

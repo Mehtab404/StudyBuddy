@@ -1,0 +1,4 @@
+# Extra packages for running the tests. The app itself does not need them, so Render installs requirements.txt only.
+-r requirements.txt
+mongomock==4.3.0  # an in-memory MongoDB, so the API tests need no database server
+httpx2==2.16.2  # what FastAPI's TestClient sends requests with (Starlette deprecated using httpx for this)

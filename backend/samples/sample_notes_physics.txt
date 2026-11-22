@@ -1,0 +1,41 @@
+Chapter 9: Force, Motion and Energy
+
+1. Force and Newton's Laws
+
+A force is a push or a pull that can change the speed, direction or shape of an object. Force is measured in newtons, written N. One newton is the force that gives a mass of one kilogram an acceleration of one metre per second squared. Force is a vector, which means it has both a size and a direction.
+
+Newton's first law says that an object stays at rest, or keeps moving in a straight line at constant speed, unless an unbalanced force acts on it. This tendency to resist a change in motion is called inertia. A passenger in a bus lurches forward when the driver brakes suddenly because the body tends to keep moving at the old speed.
+
+Newton's second law says that the acceleration of an object is directly proportional to the net force on it and inversely proportional to its mass. It is written as F = ma. A force of 20 N acting on a trolley of mass 4 kg gives an acceleration of 5 m/s2.
+
+Newton's third law says that when one object exerts a force on a second object, the second object exerts an equal and opposite force on the first. A rocket moves upward because it pushes hot gas downward. The two forces act on different objects, so they never cancel each other.
+
+2. Mass, Weight and Friction
+
+Mass is the amount of matter in an object and is measured in kilograms. Weight is the gravitational force acting on that mass, so it is measured in newtons. Weight is found from W = mg, where g is the acceleration due to gravity. On Earth g is about 9.8 m/s2, and on the Moon it is about 1.6 m/s2. An astronaut of mass 60 kg therefore has the same mass on the Moon but a much smaller weight.
+
+Friction is a force that opposes the motion between two surfaces in contact. It is caused by the roughness of the surfaces. Friction can be reduced by oiling the surfaces or by using ball bearings. It is useful too, since without it a person could not walk and a car could not stop.
+
+3. Work, Energy and Power
+
+Work is done when a force moves an object in the direction of the force. Work is calculated as force multiplied by distance, W = Fd, and it is measured in joules, written J. Pushing a box with a force of 50 N through 3 m does 150 J of work.
+
+Energy is the ability to do work and is also measured in joules. Kinetic energy is the energy of a moving object, given by the formula KE = 1/2 mv2. A 2 kg ball moving at 3 m/s has 9 J of kinetic energy. Gravitational potential energy is the energy stored in an object because of its height, given by PE = mgh.
+
+The law of conservation of energy states that energy can never be created or destroyed. It can only change from one form to another. When a pendulum swings, potential energy at the top of the swing changes into kinetic energy at the bottom, and back again.
+
+Power is the rate of doing work. It is calculated as work divided by time, P = W/t, and it is measured in watts, written W. A machine that does 600 J of work in 12 seconds has a power of 50 W. One kilowatt is 1000 watts.
+
+4. Simple Electric Circuits
+
+An electric current is a flow of charge, and it is measured in amperes by a meter called an ammeter. Voltage is the energy given to each unit of charge, and it is measured in volts by a voltmeter. A battery supplies the voltage that pushes the current round a circuit.
+
+Resistance is the opposition to the flow of current and is measured in ohms. Ohm's law states that the current through a conductor is proportional to the voltage across it, provided the temperature stays constant. It is written V = IR. A 12 V battery connected to a 4 ohm resistor drives a current of 3 A.
+
+In a series circuit the components are connected one after another along a single path, so the same current flows through all of them. If one bulb in a series circuit breaks, every bulb goes out. In a parallel circuit each component has its own path to the battery, so a broken bulb does not stop the others from working. This is why the lamps in a house are wired in parallel.
+
+5. Waves and Sound
+
+A wave carries energy from one place to another without carrying matter with it. In a transverse wave the particles vibrate at right angles to the direction the wave travels, as with ripples on water. In a longitudinal wave the particles vibrate back and forth along the direction of travel. Sound is a longitudinal wave and it needs a medium such as air, so it cannot travel through a vacuum.
+
+The speed of a wave is found from v = f x wavelength, where f is the frequency in hertz. The speed of sound in air at room temperature is about 340 m/s. Sound travels faster in water than in air, and faster still in steel. An echo is the reflection of sound from a hard surface, and it is heard clearly only if the reflecting surface is at least 17 m away.

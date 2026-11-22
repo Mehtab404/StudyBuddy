@@ -1,0 +1,443 @@
+{
+  "summary": {
+    "answerable": 34,
+    "retrieval_hit": 34,
+    "first_correct": 34,
+    "final_correct": 34,
+    "verified": 34,
+    "verified_first_try": 32,
+    "needed_retry": 2,
+    "unverified": 0,
+    "unchecked": 0,
+    "refused_wrongly": 0,
+    "mean_attempts": 1.06,
+    "fixed_by_loop": 0,
+    "broken_by_loop": 0,
+    "unanswerable": 6,
+    "first_refused": 6,
+    "final_refused": 6,
+    "errors": 0
+  },
+  "answerable": [
+    {
+      "q": "Why do leaves look green to us?",
+      "kind": "paraphrase",
+      "retrieval_hit": true,
+      "first_correct": true,
+      "final_correct": true,
+      "status": "verified",
+      "attempts": 1,
+      "final_answer": "Leaves look green because chlorophyll reflects green light while absorbing red and blue wavelengths, so the reflected green makes the leaves appear green to us [1].",
+      "issues": []
+    },
+    {
+      "q": "Which gas is given off when a plant makes its food?",
+      "kind": "paraphrase",
+      "retrieval_hit": true,
+      "first_correct": true,
+      "final_correct": true,
+      "status": "verified",
+      "attempts": 1,
+      "final_answer": "Oxygen is released when a plant makes its food through photosynthesis.[1][2]",
+      "issues": []
+    },
+    {
+      "q": "In which part of the chloroplast does the Calvin cycle take place?",
+      "kind": "paraphrase",
+      "retrieval_hit": true,
+      "first_correct": true,
+      "final_correct": true,
+      "status": "verified",
+      "attempts": 1,
+      "final_answer": "The Calvin cycle takes place in the stroma of the chloroplast.",
+      "issues": []
+    },
+    {
+      "q": "What splits water apart during the first stage?",
+      "kind": "paraphrase",
+      "retrieval_hit": true,
+      "first_correct": true,
+      "final_correct": true,
+      "status": "verified",
+      "attempts": 1,
+      "final_answer": "Water is split by photolysis during the light‑dependent stage, when chlorophyll in the thylakoid membranes absorbs light and uses that energy to break water into oxygen, electrons and hydrogen ions.[1][2]",
+      "issues": []
+    },
+    {
+      "q": "How can I check whether a leaf contains starch?",
+      "kind": "paraphrase",
+      "retrieval_hit": true,
+      "first_correct": true,
+      "final_correct": true,
+      "status": "verified",
+      "attempts": 1,
+      "final_answer": "To test a leaf for starch, first boil the leaf in water and then in alcohol to remove the chlorophyll. After it cools, place a few drops of iodine solution on the leaf; if starch is present the colour will change from brown to blue‑black.",
+      "issues": []
+    },
+    {
+      "q": "Why does a plant release carbon dioxide during the night?",
+      "kind": "paraphrase",
+      "retrieval_hit": true,
+      "first_correct": true,
+      "final_correct": true,
+      "status": "verified",
+      "attempts": 1,
+      "final_answer": "At night there is no light, so photosynthesis stops but cellular respiration keeps going; the plant continues to break down glucose and releases the carbon dioxide produced by respiration.[1]",
+      "issues": []
+    },
+    {
+      "q": "What makes muscles ache after intense exercise?",
+      "kind": "paraphrase",
+      "retrieval_hit": true,
+      "first_correct": true,
+      "final_correct": true,
+      "status": "verified",
+      "attempts": 1,
+      "final_answer": "Muscles ache after intense exercise because pyruvate is turned into lactic acid, which builds up and causes fatigue and cramps.",
+      "issues": []
+    },
+    {
+      "q": "How much energy do cells get without oxygen compared with using oxygen?",
+      "kind": "paraphrase",
+      "retrieval_hit": true,
+      "first_correct": true,
+      "final_correct": true,
+      "status": "verified",
+      "attempts": 2,
+      "final_answer": "Without oxygen, cells obtain only about 2 molecules of ATP per molecule of glucose during anaerobic respiration[2]. With oxygen, aerobic respiration produces a much larger amount, about 30 to 32 molecules of ATP per glucose[1].",
+      "issues": [
+        [
+          "the claim that aerobic yield is roughly fifteen to sixteen times greater than anaerobic - not mentioned in the sources"
+        ]
+      ]
+    },
+    {
+      "q": "Why don't growers simply turn every setting up in a greenhouse?",
+      "kind": "paraphrase",
+      "retrieval_hit": true,
+      "first_correct": true,
+      "final_correct": true,
+      "status": "verified",
+      "attempts": 1,
+      "final_answer": "Growers do not add every possible factor—extra CO₂, heating and artificial lighting—because doing so costs money, and the extra expense must be weighed against the extra crop they would get; they only add the factor that is limiting at the time.[1][3]",
+      "issues": []
+    },
+    {
+      "q": "At what heat do the enzymes in a leaf stop working?",
+      "kind": "paraphrase",
+      "retrieval_hit": true,
+      "first_correct": true,
+      "final_correct": true,
+      "status": "verified",
+      "attempts": 1,
+      "final_answer": "Enzymes in a leaf stop working at temperatures above about 45 °C, where they denature.",
+      "issues": []
+    },
+    {
+      "q": "How do you prove in the lab that a plant needs light to make starch?",
+      "kind": "paraphrase",
+      "retrieval_hit": true,
+      "first_correct": true,
+      "final_correct": true,
+      "status": "verified",
+      "attempts": 1,
+      "final_answer": "To prove that light is needed for a plant to make starch, you can do this experiment: first keep a plant in the dark for about 48 hours so any existing starch is used up (destarched). Then cover part of a leaf with black paper while leaving the rest exposed, and place the plant in sunlight for several hours. After the light period, boil the leaf in water and then in alcohol to remove chlorophyll, and dip it in iodine solution. Only the leaf area that received light will turn blue‑black, showing starch was made there, while the covered part stays brown, showing no starch was produced without light. This demonstrates that light is required for starch formation.[2]",
+      "issues": []
+    },
+    {
+      "q": "How can the speed of photosynthesis be measured using a water plant?",
+      "kind": "paraphrase",
+      "retrieval_hit": true,
+      "first_correct": true,
+      "final_correct": true,
+      "status": "verified",
+      "attempts": 1,
+      "final_answer": "Place a water plant such as Elodea in a beaker of water under a light source and count the oxygen bubbles it releases each minute; the number of bubbles per minute shows the speed of photosynthesis [1].",
+      "issues": []
+    },
+    {
+      "q": "What layers does a leaf have from top to bottom?",
+      "kind": "paraphrase",
+      "retrieval_hit": true,
+      "first_correct": true,
+      "final_correct": true,
+      "status": "verified",
+      "attempts": 1,
+      "final_answer": "A leaf is arranged from top to bottom as follows: upper epidermis, palisade layer, spongy layer, and lower epidermis.[1]",
+      "issues": []
+    },
+    {
+      "q": "What do examiners give marks for in experiment answers?",
+      "kind": "paraphrase",
+      "retrieval_hit": true,
+      "first_correct": true,
+      "final_correct": true,
+      "status": "verified",
+      "attempts": 1,
+      "final_answer": "Examiners often award marks for clearly stating which variables were kept constant in the experiment.[1][2]",
+      "issues": []
+    },
+    {
+      "q": "How does yeast cause dough to rise?",
+      "kind": "paraphrase",
+      "retrieval_hit": true,
+      "first_correct": true,
+      "final_correct": true,
+      "status": "verified",
+      "attempts": 1,
+      "final_answer": "Yeast carries out anaerobic respiration: it converts the pyruvate from sugar into ethanol and carbon dioxide, and the CO₂ gas forms bubbles that make the dough expand and rise.[1]",
+      "issues": []
+    },
+    {
+      "q": "Which tissue moves sugar to all parts of the plant?",
+      "kind": "paraphrase",
+      "retrieval_hit": true,
+      "first_correct": true,
+      "final_correct": true,
+      "status": "verified",
+      "attempts": 1,
+      "final_answer": "The phloem tissue moves sugar (sucrose) to all parts of the plant.",
+      "issues": []
+    },
+    {
+      "q": "What does RuBisCO do?",
+      "kind": "exact",
+      "retrieval_hit": true,
+      "first_correct": true,
+      "final_correct": true,
+      "status": "verified",
+      "attempts": 1,
+      "final_answer": "RuBisCO is the enzyme that fixes carbon dioxide by attaching it to the five‑carbon sugar RuBP in the Calvin cycle, starting the process that leads to glucose formation.[1][2]",
+      "issues": []
+    },
+    {
+      "q": "What did Priestley show in 1771?",
+      "kind": "exact",
+      "retrieval_hit": true,
+      "first_correct": true,
+      "final_correct": true,
+      "status": "verified",
+      "attempts": 1,
+      "final_answer": "Priestley showed that a plant placed in a closed jar could restore air that had been used up by a burning candle, reviving the air after the candle had consumed it.",
+      "issues": []
+    },
+    {
+      "q": "Who stated the limiting factor idea in 1905?",
+      "kind": "exact",
+      "retrieval_hit": true,
+      "first_correct": true,
+      "final_correct": true,
+      "status": "verified",
+      "attempts": 1,
+      "final_answer": "The limiting factor idea was first stated by F. F. Blackman in 1905.",
+      "issues": []
+    },
+    {
+      "q": "What percentage of air is CO2? 0.04%",
+      "kind": "exact",
+      "retrieval_hit": true,
+      "first_correct": true,
+      "final_correct": true,
+      "status": "verified",
+      "attempts": 1,
+      "final_answer": "Air contains about 0.04% carbon dioxide.",
+      "issues": []
+    },
+    {
+      "q": "Where do the Krebs cycle and the electron transport chain happen?",
+      "kind": "exact",
+      "retrieval_hit": true,
+      "first_correct": true,
+      "final_correct": true,
+      "status": "verified",
+      "attempts": 1,
+      "final_answer": "The Krebs cycle and the electron transport chain take place inside the mitochondria of the cell.[1]",
+      "issues": []
+    },
+    {
+      "q": "What is potassium hydroxide used for in the experiment?",
+      "kind": "exact",
+      "retrieval_hit": true,
+      "first_correct": true,
+      "final_correct": true,
+      "status": "verified",
+      "attempts": 1,
+      "final_answer": "Potassium hydroxide is placed in the sealed bell jar to absorb carbon dioxide, allowing the experiment to test whether CO₂ is needed for photosynthesis.[1]",
+      "issues": []
+    },
+    {
+      "q": "C6H12O6 + 6O2 -> 6CO2 + 6H2O + energy",
+      "kind": "exact",
+      "retrieval_hit": true,
+      "first_correct": true,
+      "final_correct": true,
+      "status": "verified",
+      "attempts": 1,
+      "final_answer": "The balanced symbol equation is C6H12O6 + 6O2 → 6CO2 + 6H2O + energy.",
+      "issues": []
+    },
+    {
+      "q": "What is the compensation point?",
+      "kind": "exact",
+      "retrieval_hit": true,
+      "first_correct": true,
+      "final_correct": true,
+      "status": "verified",
+      "attempts": 1,
+      "final_answer": "The compensation point is the light intensity at which a plant’s rate of photosynthesis exactly equals its rate of respiration, so there is no net exchange of gases.[2]",
+      "issues": []
+    },
+    {
+      "q": "Elodea",
+      "kind": "exact",
+      "retrieval_hit": true,
+      "first_correct": true,
+      "final_correct": true,
+      "status": "verified",
+      "attempts": 1,
+      "final_answer": "Elodea is a pondweed that can be used in a school lab to measure the rate of photosynthesis – you place it in water under a lamp and count the oxygen bubbles it releases each minute at different distances from the light source.[1]",
+      "issues": []
+    },
+    {
+      "q": "guard cells shape",
+      "kind": "exact",
+      "retrieval_hit": true,
+      "first_correct": true,
+      "final_correct": true,
+      "status": "verified",
+      "attempts": 1,
+      "final_answer": "Guard cells are kidney‑shaped.",
+      "issues": []
+    },
+    {
+      "q": "What gives vegetation its colour?",
+      "kind": "synonym",
+      "retrieval_hit": true,
+      "first_correct": true,
+      "final_correct": true,
+      "status": "verified",
+      "attempts": 1,
+      "final_answer": "Vegetation appears green because its cells contain chlorophyll, a green pigment that absorbs other colours of light and reflects green light, giving plants their colour.[4]",
+      "issues": []
+    },
+    {
+      "q": "How do foliage openings let air in and out?",
+      "kind": "synonym",
+      "retrieval_hit": true,
+      "first_correct": true,
+      "final_correct": true,
+      "status": "verified",
+      "attempts": 1,
+      "final_answer": "Stomata are tiny pores on the leaf surface that open and close to let gases move; they allow carbon dioxide to enter the leaf and oxygen to leave it.[1]",
+      "issues": []
+    },
+    {
+      "q": "Why can't athletes sprint forever?",
+      "kind": "synonym",
+      "retrieval_hit": true,
+      "first_correct": true,
+      "final_correct": true,
+      "status": "verified",
+      "attempts": 1,
+      "final_answer": "Athletes can only sprint for a short time because during very hard exercise their muscles rely on anaerobic respiration, which produces only a small amount of ATP (about 2 ATP per glucose) and creates lactic acid. The limited ATP supply and the buildup of lactic acid cause fatigue and cramps, so they cannot keep sprinting indefinitely.[1]",
+      "issues": []
+    },
+    {
+      "q": "How do farmers get bigger harvests?",
+      "kind": "synonym",
+      "retrieval_hit": true,
+      "first_correct": true,
+      "final_correct": true,
+      "status": "verified",
+      "attempts": 1,
+      "final_answer": "Farmers increase yields by adding whatever factor is limiting the plants at the time – for example they raise CO₂ levels, keep a steady warm temperature, provide extra light, or ensure enough water – so photosynthesis can work faster and more biomass is produced. They balance these additions against the cost of heating and lighting, adding only the factor that will give the biggest gain.[1][5]",
+      "issues": []
+    },
+    {
+      "q": "What stops the sugar-building stage once the sun goes down?",
+      "kind": "synonym",
+      "retrieval_hit": true,
+      "first_correct": true,
+      "final_correct": true,
+      "status": "verified",
+      "attempts": 1,
+      "final_answer": "The sugar‑building stage (the Calvin cycle) stops after dark because the light‑dependent reactions no longer make ATP and NADPH, so the supply of these energy carriers runs out and the cycle cannot continue.[1]",
+      "issues": []
+    },
+    {
+      "q": "Which processes undo each other's work?",
+      "kind": "synonym",
+      "retrieval_hit": true,
+      "first_correct": true,
+      "final_correct": true,
+      "status": "verified",
+      "attempts": 1,
+      "final_answer": "Photosynthesis and respiration undo each other's work: photosynthesis stores energy in glucose and releases oxygen, while respiration breaks down glucose to release energy and produces carbon dioxide, making them opposite processes.[1]",
+      "issues": []
+    },
+    {
+      "q": "What happens to the balance of gas exchange for vegetation living under heavy cover?",
+      "kind": "synonym",
+      "retrieval_hit": true,
+      "first_correct": true,
+      "final_correct": true,
+      "status": "verified",
+      "attempts": 2,
+      "final_answer": "Vegetation that is growing under heavy cover (deep shade) has a lower compensation point than plants in full sun, meaning it reaches a balance between photosynthesis and respiration at a lower light intensity. At that lower light level the rates of the two processes are equal, so there is no net gain or loss of gases; the plant takes in as much CO₂ as it releases O₂ as it releases CO₂ and takes in O₂. [1][3]",
+      "issues": [
+        [
+          "Under heavy cover the plant’s photosynthesis is slower, so the balance shifts toward more respiration than photosynthesis and the plant tends to give out more carbon dioxide and take in less oxygen compared with plants in full sun - not stated in the sources"
+        ]
+      ]
+    },
+    {
+      "q": "Which chemical captures the gas in the sealed container experiment?",
+      "kind": "synonym",
+      "retrieval_hit": true,
+      "first_correct": true,
+      "final_correct": true,
+      "status": "verified",
+      "attempts": 1,
+      "final_answer": "The chemical is potassium hydroxide, which absorbs the carbon dioxide in the sealed jar experiment [1].",
+      "issues": []
+    }
+  ],
+  "unanswerable": [
+    {
+      "q": "How many chambers does the human heart have?",
+      "first_refused": true,
+      "final_refused": true,
+      "final_answer": "The notes do not cover how many chambers the human heart has."
+    },
+    {
+      "q": "What is the function of the kidney?",
+      "first_refused": true,
+      "final_refused": true,
+      "final_answer": "The notes do not cover the function of the kidney."
+    },
+    {
+      "q": "How does DNA replicate?",
+      "first_refused": true,
+      "final_refused": true,
+      "final_answer": "The notes do not cover DNA replication."
+    },
+    {
+      "q": "What is the capital of France?",
+      "first_refused": true,
+      "final_refused": true,
+      "final_answer": "The notes do not cover the capital of France."
+    },
+    {
+      "q": "Who wrote the play Hamlet?",
+      "first_refused": true,
+      "final_refused": true,
+      "final_answer": "The notes do not cover who wrote Hamlet."
+    },
+    {
+      "q": "When did the Second World War end?",
+      "first_refused": true,
+      "final_refused": true,
+      "final_answer": "The notes do not cover that information."
+    }
+  ]
+}

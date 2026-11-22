@@ -1,0 +1,39 @@
+{
+  "document": "sample_notes_physics.txt",
+  "about": "A second subject for the evaluation, so the numbers do not depend on one document. Each question has an answer_contains phrase copied from sample_notes_physics.txt. A retrieval counts as a hit when one of the returned chunks contains that phrase. kind: 'paraphrase' = the question shares few words with the answer, 'exact' = it asks about a specific name, number, term or formula, 'synonym' = the question uses different words for the same thing.",
+  "unanswerable": [
+    "What is the speed of light in a vacuum?",
+    "Who discovered the electron?",
+    "How does a nuclear reactor produce electricity?",
+    "What is the boiling point of water in kelvin?",
+    "What is the capital of Japan?"
+  ],
+  "questions": [
+    {"q": "Why does a person standing in a bus fall forwards when it stops quickly?", "answer_contains": "A passenger in a bus lurches forward when the driver brakes suddenly", "kind": "paraphrase"},
+    {"q": "What is the unit of force and how is one defined?", "answer_contains": "One newton is the force that gives a mass of one kilogram", "kind": "paraphrase"},
+    {"q": "What does Newton's second law say?", "answer_contains": "directly proportional to the net force on it and inversely proportional to its mass", "kind": "exact"},
+    {"q": "What acceleration does a 20 N force give a 4 kg trolley?", "answer_contains": "A force of 20 N acting on a trolley of mass 4 kg gives an acceleration of 5 m/s2", "kind": "exact"},
+    {"q": "Why can the action and reaction forces of the third law not cancel out?", "answer_contains": "The two forces act on different objects, so they never cancel each other", "kind": "paraphrase"},
+    {"q": "How does a rocket take off?", "answer_contains": "A rocket moves upward because it pushes hot gas downward", "kind": "paraphrase"},
+    {"q": "Does an astronaut's mass change on the Moon?", "answer_contains": "the same mass on the Moon but a much smaller weight", "kind": "paraphrase"},
+    {"q": "What is the value of g on the Moon?", "answer_contains": "on the Moon it is about 1.6 m/s2", "kind": "exact"},
+    {"q": "Name two ways to reduce friction.", "answer_contains": "Friction can be reduced by oiling the surfaces or by using ball bearings", "kind": "paraphrase"},
+    {"q": "What is a reason friction is helpful?", "answer_contains": "without it a person could not walk and a car could not stop", "kind": "paraphrase"},
+    {"q": "How much work is done pushing a box with 50 N through 3 m?", "answer_contains": "Pushing a box with a force of 50 N through 3 m does 150 J of work", "kind": "exact"},
+    {"q": "What is the formula for kinetic energy?", "answer_contains": "KE = 1/2 mv2", "kind": "exact"},
+    {"q": "What is the formula for gravitational potential energy?", "answer_contains": "PE = mgh", "kind": "exact"},
+    {"q": "What does the law of conservation of energy state?", "answer_contains": "energy can never be created or destroyed", "kind": "exact"},
+    {"q": "Which energy changes happen as a pendulum moves?", "answer_contains": "potential energy at the top of the swing changes into kinetic energy at the bottom", "kind": "paraphrase"},
+    {"q": "What is the power of a machine that does 600 J of work in 12 seconds?", "answer_contains": "A machine that does 600 J of work in 12 seconds has a power of 50 W", "kind": "exact"},
+    {"q": "How many watts are in a kilowatt?", "answer_contains": "One kilowatt is 1000 watts", "kind": "exact"},
+    {"q": "Which instrument measures electric current?", "answer_contains": "measured in amperes by a meter called an ammeter", "kind": "synonym"},
+    {"q": "What current flows when a 12 V cell drives a 4 ohm resistor?", "answer_contains": "A 12 V battery connected to a 4 ohm resistor drives a current of 3 A", "kind": "synonym"},
+    {"q": "State the equation linking voltage, current and resistance.", "answer_contains": "It is written V = IR", "kind": "exact"},
+    {"q": "What happens to the other lamps when one bulb fails in a series arrangement?", "answer_contains": "If one bulb in a series circuit breaks, every bulb goes out", "kind": "synonym"},
+    {"q": "Why are household lights connected side by side rather than in a line?", "answer_contains": "This is why the lamps in a house are wired in parallel", "kind": "synonym"},
+    {"q": "In which kind of wave do the particles move at right angles to the direction of travel?", "answer_contains": "In a transverse wave the particles vibrate at right angles to the direction the wave travels", "kind": "paraphrase"},
+    {"q": "Can sound travel through empty space?", "answer_contains": "it needs a medium such as air, so it cannot travel through a vacuum", "kind": "synonym"},
+    {"q": "How fast does sound move through air?", "answer_contains": "The speed of sound in air at room temperature is about 340 m/s", "kind": "synonym"},
+    {"q": "How far away must a surface be for an echo to be heard clearly?", "answer_contains": "heard clearly only if the reflecting surface is at least 17 m away", "kind": "paraphrase"}
+  ]
+}

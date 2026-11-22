@@ -19,6 +19,7 @@ from pymongo.database import Database
 from app.auth import get_current_user
 from app.chunk_store import build_and_store, embed_quietly
 from app.database import get_db
+from app.pagination import decode_cursor, encode_cursor, trim
 from app.retrieval import Mode, search as search_hits
 from app.studyset import _get_set
 
@@ -66,6 +67,8 @@ class ChunkingInfo(BaseModel):
 class ChunksResponse(BaseModel):
     chunking: ChunkingInfo | None  # None: this set has no stored chunks yet (created before Phase 1b)
     chunks: list[ChunkOut]
+    next_cursor: str | None = None  # pass it as `cursor` to get the next chunks. None: these were the last ones
+    total: int = 0  # how many chunks the set has in all
 
 
 class SearchHit(BaseModel):
@@ -98,19 +101,38 @@ def _out(row: dict, include_content: bool) -> ChunkOut:
     )
 
 
-def _response(db: Database, doc: dict, include_content: bool) -> ChunksResponse:
-    rows = db.chunks.find({"document_id": doc["_id"]}).sort("chunk_index", 1)
-    return ChunksResponse(chunking=doc.get("chunking"), chunks=[_out(r, include_content) for r in rows])
+DEFAULT_CHUNKS_PAGE = 100
+MAX_CHUNKS_PAGE = 500
+
+
+def _response(
+    db: Database, doc: dict, include_content: bool, limit: int = DEFAULT_CHUNKS_PAGE, cursor: str | None = None
+) -> ChunksResponse:
+    query: dict = {"document_id": doc["_id"]}
+    total = db.chunks.count_documents(query)
+    if cursor:
+        (last_index,) = decode_cursor(cursor, int)
+        query["chunk_index"] = {"$gt": last_index}  # chunk_index is unique within a document, so it needs no tie-breaker
+    rows = list(db.chunks.find(query).sort("chunk_index", 1).limit(limit + 1))
+    rows, more = trim(rows, limit)
+    return ChunksResponse(
+        chunking=doc.get("chunking"),
+        chunks=[_out(r, include_content) for r in rows],
+        next_cursor=encode_cursor(rows[-1]["chunk_index"]) if more else None,
+        total=total,
+    )
 
 
 @router.get("", response_model=ChunksResponse)
 def get_chunks(
     set_id: str,
     include_content: bool = Query(True),
+    limit: int = Query(DEFAULT_CHUNKS_PAGE, ge=1, le=MAX_CHUNKS_PAGE),
+    cursor: str | None = None,
     db: Database = Depends(get_db),
     user: dict = Depends(get_current_user),
 ):
-    return _response(db, _get_set(db, set_id, user), include_content)
+    return _response(db, _get_set(db, set_id, user), include_content, limit, cursor)
 
 
 @router.post("/rebuild", response_model=ChunksResponse)

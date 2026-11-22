@@ -42,7 +42,8 @@ def load_eval_set(path: Path = EVAL_SET) -> dict:
 
 def build_rows(document: str, size: int, overlap: int) -> list[dict]:
     path = BACKEND / "samples" / document
-    _, pages = extract_document(path.name, path.read_bytes())
+    text, pages = extract_document(path.name, path.read_bytes())
+    pages = pages or [text]  # a .txt file has no pages: the whole text is one
     chunks = chunk_document([Page(i + 1, t) for i, t in enumerate(pages)], size=size, overlap=overlap).chunks
     vectors = embed_texts([c.content for c in chunks])
     return [{"content": c.content, "chunk_index": c.index, "embedding": v} for c, v in zip(chunks, vectors)]
@@ -79,8 +80,8 @@ def evaluate(rows: list[dict], questions: list[dict], mode: str) -> dict:
     }
 
 
-def run(size: int, overlap: int) -> dict:
-    data = load_eval_set()
+def run(size: int, overlap: int, questions: Path = EVAL_SET) -> dict:
+    data = load_eval_set(questions)
     rows = build_rows(data["document"], size, overlap)
     return {
         "document": data["document"],
@@ -116,9 +117,10 @@ def main() -> None:
     parser.add_argument("--chunk-overlap", type=int, default=CHUNK_OVERLAP)
     parser.add_argument("--save", help="write the numbers to this JSON file")
     parser.add_argument("--show-misses", action="store_true")
+    parser.add_argument("--questions", type=Path, default=EVAL_SET, help="a question file (default: samples/eval_questions.json)")
     args = parser.parse_args()
 
-    report = run(args.chunk_size, args.chunk_overlap)
+    report = run(args.chunk_size, args.chunk_overlap, args.questions)
     print_report(report, args.show_misses)
     if args.save:
         Path(args.save).write_text(json.dumps(report, indent=2), encoding="utf-8")
