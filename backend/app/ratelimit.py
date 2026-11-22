@@ -46,6 +46,8 @@ RULES = [
         window=60,
         per_user=True,
     ),
+    # Editing a card's answer re-checks it against its source with Groq. Same name as above, so both share one quota.
+    Rule("ai", frozenset({"PATCH"}), re.compile(rf"^/cards/{_ID}$"), limit=15, window=60, per_user=True),
     # Creating sets and rebuilding chunks run the embedding model on the server's CPU
     Rule(
         "indexing",
@@ -55,6 +57,8 @@ RULES = [
         window=60,
         per_user=True,
     ),
+    # Searching a set's chunks embeds the query on the CPU, even though it is a GET
+    Rule("indexing", frozenset({"GET"}), re.compile(rf"^/sets/{_ID}/chunks/search$"), limit=10, window=60, per_user=True),
 ]
 
 # (rule name, client key) -> times of recent requests
@@ -144,7 +148,7 @@ def record_failed_login(email: str) -> None:
 
 
 async def rate_limit_middleware(request: Request, call_next):
-    if not RATE_LIMIT_ENABLED or request.method not in ("POST", "PUT", "PATCH", "DELETE"):
+    if not RATE_LIMIT_ENABLED:
         return await call_next(request)
 
     path = request.url.path.rstrip("/") or "/"
