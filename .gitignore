@@ -21,6 +21,10 @@ frontend/next-env.d.ts
 *.tsbuildinfo
 npm-debug.log*
 
+# Playwright (browser tests)
+frontend/test-results/
+frontend/playwright-report/
+
 # OS / editors
 .DS_Store
 Thumbs.db
