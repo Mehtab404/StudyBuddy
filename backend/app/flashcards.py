@@ -14,10 +14,12 @@ from app.trace import traced_create
 # Groq production model (listed at console.groq.com/docs/models). Override with GROQ_MODEL in backend/.env.
 MODEL = GROQ_MODEL
 
-# Long notes are split into chunks of about CHUNK_CHARS and processed in parallel
-MAX_NOTES_CHARS = 200_000
+# Long notes are split into chunks of about CHUNK_CHARS and processed in parallel. Only MAX_CHUNKS chunks are read, so
+# the notes we accept must fit in them, or the end would be ignored without the user knowing. Chunks end at sentence
+# boundaries and so run a little short of CHUNK_CHARS; the limit below leaves 1/6 of the room free for that.
 CHUNK_CHARS = 6_000
 MAX_CHUNKS = 20
+MAX_NOTES_CHARS = 100_000
 
 SYSTEM_PROMPT = """You turn the user's study notes into flashcards.
 
