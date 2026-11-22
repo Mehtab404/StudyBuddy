@@ -151,6 +151,18 @@ export const tokenStore = {
 // so this is generous; it only stops a stuck request from leaving the page spinning forever.
 const REQUEST_TIMEOUT_MS = 180_000;
 
+// An error response from the backend. The message is the text to show; status lets callers tell, for example, a
+// missing set (404) from a server problem.
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    public status: number,
+  ) {
+    super(message);
+    this.name = "ApiError";
+  }
+}
+
 // Today's date in the browser's time zone, as YYYY-MM-DD
 export function localDate(): string {
   const d = new Date();
@@ -194,7 +206,7 @@ async function request<T>(path: string, init?: RequestInit, { auth = true } = {}
       if (typeof body.detail === "string") message = body.detail;
       else if (Array.isArray(body.detail)) message = body.detail.map((d: { msg: string }) => d.msg).join(", ");
     } catch {}
-    throw new Error(message);
+    throw new ApiError(message, res.status);
   }
   if (res.status === 204) return undefined as T;
   return res.json();

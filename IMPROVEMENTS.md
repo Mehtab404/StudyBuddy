@@ -162,9 +162,10 @@ Items are grouped by priority. Effort is a rough guess: **S** = under an hour, *
 
 ## 6. Frontend
 
-### 6.1 Add error, not-found and loading pages (S)
+### 6.1 Add error, not-found and loading pages (S) [DONE]
 - **Problem:** there are no `error.tsx`, `not-found.tsx` or `loading.tsx` files. An unknown set id shows a generic error box instead of a 404 page.
-- **Fix:** add them under `frontend/app/`. Check the Next.js docs in `frontend/node_modules/next/dist/docs/` first, as `frontend/AGENTS.md` asks.
+- **Done:** `error.tsx`, `global-error.tsx`, a root `not-found.tsx` and a `sets/[id]/not-found.tsx` (the set page shows it on a 404). No `loading.tsx`: every page fetches on the client and already shows its own loading state, so that file would never appear.
+- **Original suggestion:** add them under `frontend/app/`. Check the Next.js docs in `frontend/node_modules/next/dist/docs/` first, as `frontend/AGENTS.md` asks.
 
 ### 6.2 Page titles and link previews (S)
 - **Problem:** only the root layout sets `metadata`, so every tab is titled "studyBuddy". There are no Open Graph tags, so links shared on LinkedIn or WhatsApp show no preview.

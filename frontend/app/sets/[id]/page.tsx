@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { notFound, useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import AskTab from "@/components/set/AskTab";
 import FlashcardsTab from "@/components/set/FlashcardsTab";
@@ -9,7 +9,7 @@ import PaperTab from "@/components/set/PaperTab";
 import QuizTab from "@/components/set/QuizTab";
 import RevisionTab from "@/components/set/RevisionTab";
 import { ErrorBox, Loading, chip, errorMessage, pageTitle, tabClass, textLink } from "@/components/ui";
-import { api, type StudySet } from "@/lib/api";
+import { ApiError, api, type StudySet } from "@/lib/api";
 
 const TABS = ["Revision notes", "Quiz", "Exam paper", "Flashcards", "Ask your notes"] as const;
 type TabName = (typeof TABS)[number];
@@ -18,15 +18,18 @@ export default function SetPage() {
   const { id } = useParams<{ id: string }>();
   const [set, setSet] = useState<StudySet | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [missing, setMissing] = useState(false); // the backend said 404: no such set, or not yours
   const [tab, setTab] = useState<TabName>("Revision notes");
 
   useEffect(() => {
     api
       .getSet(id)
       .then(setSet)
-      .catch((err) => setError(errorMessage(err)));
+      .catch((err) => (err instanceof ApiError && err.status === 404 ? setMissing(true) : setError(errorMessage(err))));
   }, [id]);
 
+  // Shows app/sets/[id]/not-found.tsx. It has to be called while rendering, not inside the fetch callback above.
+  if (missing) notFound();
   if (error) {
     return (
       <div>
