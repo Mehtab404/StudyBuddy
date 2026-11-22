@@ -1,26 +1,32 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import ReviewCard from "@/components/ReviewCard";
-import { EmptyState, ErrorBox, Loading, chip, errorMessage, label, pageLead, pageTitle, primaryButton } from "@/components/ui";
-import { api, type Card, type CheckStats } from "@/lib/api";
+import { EmptyState, ErrorBox, LoadMore, Loading, chip, label, pageLead, pageTitle, primaryButton } from "@/components/ui";
+import { api, type CheckStats } from "@/lib/api";
+import { usePaged } from "@/lib/usePaged";
 
 export default function ReviewPage() {
-  const [cards, setCards] = useState<Card[] | null>(null);
+  const fetchPage = useCallback((cursor: string | null, signal: AbortSignal) => api.listCards("pending", { cursor, signal }), []);
+  const { items: cards, total, hasMore, error, loadingMore, loadMore, removeItem: remove, retry } = usePaged(fetchPage);
   const [stats, setStats] = useState<CheckStats | null>(null);
-  const [error, setError] = useState<string | null>(null);
 
+  // Stats are a nice-to-have; ignore failures
   useEffect(() => {
-    // Stats are a nice-to-have; ignore failures
-    api.checkStats().then(setStats).catch(() => {});
-    api
-      .listCards("pending")
-      .then(setCards)
-      .catch((err) => setError(errorMessage(err)));
+    const controller = new AbortController();
+    api.checkStats(controller.signal).then(setStats).catch(() => {});
+    return () => controller.abort();
   }, []);
 
-  const remove = (id: string) => setCards((prev) => prev?.filter((c) => c.id !== id) ?? null);
+  // Every card on screen was approved or rejected, but more are waiting: bring in the next ones.
+  // Not while there is an error: a failed load changes state, which would run this again straight away and so
+  // hammer a server that is already struggling. The "Try again" button below is how the user asks once more.
+  const stuck = cards !== null && cards.length === 0 && hasMore;
+  useEffect(() => {
+    if (stuck && !error) loadMore();
+  }, [stuck, error, loadMore]);
+
   const flaggedInQueue = cards?.filter((c) => c.check_status === "flagged").length ?? 0;
 
   return (
@@ -35,10 +41,16 @@ export default function ReviewPage() {
         </p>
       )}
 
-      <ErrorBox message={error} />
+      <ErrorBox message={error} onRetry={cards === null ? retry : undefined} />
       {!error && cards === null && <Loading />}
 
-      {cards && cards.length === 0 && (
+      {stuck && error && (
+        <button onClick={loadMore} disabled={loadingMore} className={`${primaryButton} mt-6`}>
+          {loadingMore ? "Loading…" : "Try again"}
+        </button>
+      )}
+
+      {cards && cards.length === 0 && !hasMore && (
         <div className="mt-8">
           <EmptyState title="Nothing to review" text="New flashcards wait here until you approve them.">
             <Link href="/sets" className={primaryButton}>
@@ -51,14 +63,19 @@ export default function ReviewPage() {
       {cards && cards.length > 0 && (
         <>
           <p className="mt-8 flex flex-wrap items-center gap-2">
-            <span className={label}>{cards.length} waiting</span>
-            {flaggedInQueue > 0 && <span className={`${chip} bg-amber-200`}>{flaggedInQueue} flagged for a closer look</span>}
+            <span className={label}>{total} waiting</span>
+            {flaggedInQueue > 0 && (
+              <span className={`${chip} bg-amber-200`}>
+                {flaggedInQueue} flagged for a closer look{hasMore ? " (in these)" : ""}
+              </span>
+            )}
           </p>
           <div className="mt-4 space-y-6">
             {cards.map((card) => (
               <ReviewCard key={card.id} card={card} onResolved={remove} />
             ))}
           </div>
+          <LoadMore shown={cards.length} total={total} hasMore={hasMore} loading={loadingMore} onClick={loadMore} />
         </>
       )}
     </div>

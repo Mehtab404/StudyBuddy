@@ -10,6 +10,8 @@ type AuthState = {
   signup: (name: string, email: string, password: string) => Promise<void>;
   guest: () => Promise<void>;
   upgrade: (name: string, email: string, password: string) => Promise<void>;
+  changePassword: (currentPassword: string, newPassword: string) => Promise<void>;
+  deleteAccount: (password: string | null) => Promise<void>;
   logout: () => void;
 };
 
@@ -67,6 +69,14 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     guest: async () => finishAuth((await api.guest()).access_token, false),
     // Replaces the guest's short-lived, tab-only token with a normal one
     upgrade: async (name, email, password) => finishAuth((await api.upgrade(name, email, password)).access_token),
+    // The old token stops working when the password changes, so the new one replaces it (kept the same way as before)
+    changePassword: async (currentPassword, newPassword) =>
+      finishAuth((await api.changePassword(currentPassword, newPassword)).access_token, tokenStore.persistent()),
+    deleteAccount: async (password) => {
+      await api.deleteAccount(password);
+      tokenStore.clear();
+      setUser(null);
+    },
     logout: () => {
       tokenStore.clear();
       setUser(null);

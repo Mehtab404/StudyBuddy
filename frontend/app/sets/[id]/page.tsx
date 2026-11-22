@@ -2,38 +2,35 @@
 
 import Link from "next/link";
 import { notFound, useParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import AskTab from "@/components/set/AskTab";
 import FlashcardsTab from "@/components/set/FlashcardsTab";
 import PaperTab from "@/components/set/PaperTab";
 import QuizTab from "@/components/set/QuizTab";
+import RenameTitle from "@/components/set/RenameTitle";
 import RevisionTab from "@/components/set/RevisionTab";
-import { ErrorBox, Loading, chip, errorMessage, pageTitle, tabClass, textLink } from "@/components/ui";
-import { ApiError, api, type StudySet } from "@/lib/api";
+import { ErrorBox, Loading, chip, errorMessage, tabClass, textLink } from "@/components/ui";
+import { ApiError, api } from "@/lib/api";
+import { useLoad } from "@/lib/useLoad";
 
 const TABS = ["Revision notes", "Quiz", "Exam paper", "Flashcards", "Ask your notes"] as const;
 type TabName = (typeof TABS)[number];
 
 export default function SetPage() {
   const { id } = useParams<{ id: string }>();
-  const [set, setSet] = useState<StudySet | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [missing, setMissing] = useState(false); // the backend said 404: no such set, or not yours
   const [tab, setTab] = useState<TabName>("Revision notes");
 
-  useEffect(() => {
-    api
-      .getSet(id)
-      .then(setSet)
-      .catch((err) => (err instanceof ApiError && err.status === 404 ? setMissing(true) : setError(errorMessage(err))));
-  }, [id]);
+  // Cancelled when the page is left or the id changes, and a slow answer for an earlier set is never shown
+  const fetchSet = useCallback((signal: AbortSignal) => api.getSet(id, signal), [id]);
+  const { data: set, error: loadError, reload, update: setSet } = useLoad(fetchSet);
+  const missing = loadError instanceof ApiError && loadError.status === 404; // no such set, or not yours
 
-  // Shows app/sets/[id]/not-found.tsx. It has to be called while rendering, not inside the fetch callback above.
+  // Shows app/sets/[id]/not-found.tsx. It has to be called while rendering.
   if (missing) notFound();
-  if (error) {
+  if (loadError) {
     return (
       <div>
-        <ErrorBox message={error} />
+        <ErrorBox message={errorMessage(loadError)} onRetry={reload} />
         <Link href="/sets" className={`mt-6 inline-block ${textLink}`}>
           ← Back to my sets
         </Link>
@@ -42,13 +39,29 @@ export default function SetPage() {
   }
   if (!set) return <Loading />;
 
+  // Left/Right/Home/End select and focus another tab (the keyboard pattern for tabs)
+  function onTabKeyDown(e: React.KeyboardEvent, index: number) {
+    const last = TABS.length - 1;
+    const next =
+      e.key === "ArrowRight" ? (index === last ? 0 : index + 1)
+      : e.key === "ArrowLeft" ? (index === 0 ? last : index - 1)
+      : e.key === "Home" ? 0
+      : e.key === "End" ? last
+      : null;
+    if (next === null) return;
+    e.preventDefault();
+    setTab(TABS[next]);
+    document.getElementById(`tab-${next}`)?.focus();
+  }
+
   return (
     <div>
+      <title>{`${set.title} · studyBuddy`}</title>
       <div className="no-print">
         <Link href="/sets" className="font-mono text-xs font-bold uppercase tracking-widest text-stone-500 hover:text-ink">
           ← My sets
         </Link>
-        <h1 className={`mt-3 ${pageTitle}`}>{set.title}</h1>
+        <RenameTitle set={set} onChange={setSet} />
         {(set.subject || set.level) && (
           <div className="mt-3 flex flex-wrap gap-2">
             {set.subject && <span className={`${chip} bg-sun`}>{set.subject}</span>}
@@ -66,10 +79,20 @@ export default function SetPage() {
           </ul>
         )}
 
-        <ul className="mt-8 flex flex-wrap gap-3 border-b-2 border-stone-300 pb-5">
-          {TABS.map((name) => (
-            <li key={name}>
-              <button onClick={() => setTab(name)} className={tabClass(tab === name)} aria-pressed={tab === name}>
+        <ul role="tablist" aria-label="Study tools" className="mt-8 flex flex-wrap gap-3 border-b-2 border-stone-300 pb-5">
+          {TABS.map((name, i) => (
+            <li key={name} role="presentation">
+              <button
+                role="tab"
+                id={`tab-${i}`}
+                aria-selected={tab === name}
+                aria-controls="tabpanel"
+                // Only the selected tab is in the tab order. Arrow keys move between tabs.
+                tabIndex={tab === name ? 0 : -1}
+                onClick={() => setTab(name)}
+                onKeyDown={(e) => onTabKeyDown(e, i)}
+                className={tabClass(tab === name)}
+              >
                 {name}
               </button>
             </li>
@@ -77,7 +100,7 @@ export default function SetPage() {
         </ul>
       </div>
 
-      <div className="mt-8">
+      <div className="mt-8" role="tabpanel" id="tabpanel" aria-labelledby={`tab-${TABS.indexOf(tab)}`} tabIndex={0}>
         {tab === "Revision notes" && <RevisionTab set={set} onChange={setSet} />}
         {tab === "Quiz" && <QuizTab set={set} onChange={setSet} />}
         {tab === "Exam paper" && <PaperTab set={set} onChange={setSet} />}

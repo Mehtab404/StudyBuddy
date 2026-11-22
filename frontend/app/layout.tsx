@@ -10,9 +10,14 @@ const inter = Inter({ variable: "--font-inter", subsets: ["latin"] });
 const spaceGrotesk = Space_Grotesk({ variable: "--font-space-grotesk", subsets: ["latin"] });
 const jetbrainsMono = JetBrains_Mono({ variable: "--font-jetbrains-mono", subsets: ["latin"] });
 
+const description = "Turn your notes into revision notes, quizzes, exam papers and flashcards";
+
+// Pages and layouts below set `title`; the template adds the site name to it
 export const metadata: Metadata = {
-  title: "studyBuddy",
-  description: "Turn your notes into revision notes, quizzes, exam papers and flashcards",
+  title: { default: "studyBuddy", template: "%s · studyBuddy" },
+  description,
+  openGraph: { type: "website", siteName: "studyBuddy", title: "studyBuddy", description },
+  twitter: { card: "summary", title: "studyBuddy", description },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

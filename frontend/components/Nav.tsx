@@ -73,9 +73,16 @@ function ProfileMenu({ user, logout }: { user: User; logout: () => void }) {
           ) : (
             since && <p className="mt-3 font-mono text-[11px] uppercase tracking-wider text-stone-500">Member since {since}</p>
           )}
+          <Link
+            href="/account"
+            onClick={() => setOpen(false)}
+            className="mt-4 block w-full border-2 border-ink bg-white px-4 py-2 text-center font-display text-sm font-bold text-ink shadow-hard transition-transform hover:-translate-y-0.5"
+          >
+            Account settings
+          </Link>
           <button
             onClick={logout}
-            className="mt-4 w-full border-2 border-ink bg-white px-4 py-2 font-display text-sm font-bold text-ink shadow-hard transition-transform hover:-translate-y-0.5"
+            className="mt-3 w-full border-2 border-ink bg-white px-4 py-2 font-display text-sm font-bold text-ink shadow-hard transition-transform hover:-translate-y-0.5"
           >
             Log out
           </button>

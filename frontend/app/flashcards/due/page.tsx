@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { EmptyState, ErrorBox, Loading, chip, errorMessage, label, pageLead, pageTitle, primaryButton } from "@/components/ui";
+import { useCallback } from "react";
+import { EmptyState, ErrorBox, LoadMore, Loading, chip, label, pageLead, pageTitle, primaryButton } from "@/components/ui";
 import { api, localDate, type Card } from "@/lib/api";
+import { usePaged } from "@/lib/usePaged";
 
 function dueLabel(card: Card) {
   if (!card.due_date) return { text: "New", color: "bg-mint" };
@@ -14,22 +15,15 @@ function dueLabel(card: Card) {
 }
 
 export default function DuePage() {
-  const [cards, setCards] = useState<Card[] | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    api
-      .dueCards()
-      .then(setCards)
-      .catch((err) => setError(errorMessage(err)));
-  }, []);
+  const fetchPage = useCallback((cursor: string | null, signal: AbortSignal) => api.dueCards(cursor, signal), []);
+  const { items: cards, total, hasMore, error, loadingMore, loadMore, retry } = usePaged(fetchPage);
 
   return (
     <div>
       <h1 className={pageTitle}>Cards due today</h1>
       <p className={pageLead}>New cards, plus any whose review date has arrived.</p>
 
-      <ErrorBox message={error} />
+      <ErrorBox message={error} onRetry={cards === null ? retry : undefined} />
       {!error && cards === null && <Loading />}
 
       {cards && cards.length === 0 && (
@@ -41,7 +35,7 @@ export default function DuePage() {
       {cards && cards.length > 0 && (
         <>
           <div className="mt-8 flex items-center justify-between gap-4">
-            <p className={label}>{cards.length} due</p>
+            <p className={label}>{total} due</p>
             <Link href="/flashcards/quiz" className={primaryButton}>
               Start quiz <span aria-hidden="true">→</span>
             </Link>
@@ -57,6 +51,7 @@ export default function DuePage() {
               );
             })}
           </ul>
+          <LoadMore shown={cards.length} total={total} hasMore={hasMore} loading={loadingMore} onClick={loadMore} />
         </>
       )}
     </div>

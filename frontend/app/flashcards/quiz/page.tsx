@@ -1,12 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { EmptyState, ErrorBox, Loading, errorMessage, label, pageTitle, primaryButton, secondaryButton, sourceQuote, textLink } from "@/components/ui";
-import { api, type Card } from "@/lib/api";
+import { api, isAbort, type Card } from "@/lib/api";
 
 export default function QuizPage() {
   const [queue, setQueue] = useState<Card[] | null>(null);
+  const [totalDue, setTotalDue] = useState(0); // every card due, which can be more than the queue holds
   const [index, setIndex] = useState(0);
   const [revealed, setRevealed] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -14,12 +15,29 @@ export default function QuizPage() {
   const [knewCount, setKnewCount] = useState(0);
   const [lastInterval, setLastInterval] = useState<number | null>(null);
 
-  useEffect(() => {
-    api
-      .dueCards()
-      .then(setQueue)
-      .catch((err) => setError(errorMessage(err)));
+  // A session is one page of due cards. Studying a card moves its due date on, so asking again gives the next ones.
+  const loadQueue = useCallback((signal?: AbortSignal) => {
+    return api
+      .dueCards(null, signal)
+      .then((page) => {
+        setQueue(page.items);
+        setTotalDue(page.total);
+        setIndex(0);
+        setKnewCount(0);
+        setLastInterval(null);
+        setRevealed(false);
+        setError(null);
+      })
+      .catch((err) => {
+        if (!isAbort(err)) setError(errorMessage(err));
+      });
   }, []);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    loadQueue(controller.signal);
+    return () => controller.abort();
+  }, [loadQueue]);
 
   async function answer(knew: boolean, easy = false) {
     if (!queue) return;
@@ -45,7 +63,7 @@ export default function QuizPage() {
     <div>
       <h1 className={pageTitle}>Quiz</h1>
 
-      <ErrorBox message={error} />
+      <ErrorBox message={error} onRetry={queue === null ? () => loadQueue() : undefined} />
       {!error && queue === null && <Loading />}
 
       {queue && queue.length === 0 && (
@@ -63,6 +81,7 @@ export default function QuizPage() {
           <div className="mb-3 flex items-center justify-between gap-4">
             <span className={label}>
               Card {index + 1} of {queue.length}
+              {totalDue > queue.length && ` (${totalDue} due in all)`}
             </span>
             {lastInterval !== null && index > 0 && (
               <span className="font-mono text-xs text-stone-500">
@@ -115,9 +134,16 @@ export default function QuizPage() {
           <p className="mt-2 text-lg text-ink">
             You knew {knewCount} of {queue.length}. Each card has been rescheduled.
           </p>
-          <Link href="/flashcards/due" className={`mt-6 inline-block ${textLink}`}>
-            Back to due cards
-          </Link>
+          {totalDue > queue.length && (
+            <button onClick={() => loadQueue()} className={`${primaryButton} mt-6`}>
+              Study the next {Math.min(totalDue - queue.length, queue.length)} <span aria-hidden="true">→</span>
+            </button>
+          )}
+          <div>
+            <Link href="/flashcards/due" className={`mt-6 inline-block ${textLink}`}>
+              Back to due cards
+            </Link>
+          </div>
         </div>
       )}
     </div>

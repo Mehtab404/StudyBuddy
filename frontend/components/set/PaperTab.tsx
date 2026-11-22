@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import { ErrorBox, card, dangerButton, errorMessage, inputClass, label, primaryButton, secondaryButton, tabClass } from "@/components/ui";
-import { api, type Paper, type StudySet } from "@/lib/api";
+import { useEffect, useState } from "react";
+import { ErrorBox, Loading, card, dangerButton, errorMessage, inputClass, label, primaryButton, secondaryButton, tabClass } from "@/components/ui";
+import { api, isAbort, type Paper, type StudySet } from "@/lib/api";
 
 const fieldLabel = "block font-display font-bold text-ink";
 const optional = "font-sans font-normal text-stone-500";
@@ -16,11 +16,27 @@ export default function PaperTab({ set, onChange }: { set: StudySet; onChange: (
   const [showAnswers, setShowAnswers] = useState(false);
   // Which paper is open; null = the newest one
   const [openId, setOpenId] = useState<string | null>(null);
+  // Papers fetched so far. The set only lists summaries, and a paper is loaded in full the first time it is opened.
+  const [loaded, setLoaded] = useState<Record<string, Paper>>({});
 
   const totalMarks = Number(marks);
   const marksOk = Number.isInteger(totalMarks) && totalMarks >= 5 && totalMarks <= 200;
   const papers = [...set.papers].reverse(); // newest first
-  const paper: Paper | undefined = papers.find((p) => p.id === openId) ?? papers[0];
+  const summary = papers.find((p) => p.id === openId) ?? papers[0];
+  const paper: Paper | undefined = summary ? loaded[summary.id] : undefined;
+  const summaryId = summary?.id;
+
+  useEffect(() => {
+    if (!summaryId || loaded[summaryId]) return;
+    const controller = new AbortController(); // cancelled when another paper is opened or the tab is left
+    api
+      .getPaper(set.id, summaryId, controller.signal)
+      .then((p) => setLoaded((prev) => ({ ...prev, [p.id]: p })))
+      .catch((err) => {
+        if (!isAbort(err)) setError(errorMessage(err));
+      });
+    return () => controller.abort();
+  }, [set.id, summaryId, loaded]);
 
   async function generate(e: React.FormEvent) {
     e.preventDefault();
@@ -33,7 +49,7 @@ export default function PaperTab({ set, onChange }: { set: StudySet; onChange: (
         details,
       });
       onChange(updated);
-      setOpenId(updated.papers[updated.papers.length - 1].id);
+      setOpenId(updated.papers[updated.papers.length - 1].id); // its questions load as soon as it is open
     } catch (err) {
       setError(errorMessage(err));
     } finally {
@@ -41,10 +57,15 @@ export default function PaperTab({ set, onChange }: { set: StudySet; onChange: (
     }
   }
 
-  async function remove(p: Paper) {
+  async function remove(id: string) {
     if (!window.confirm("Delete this paper?")) return;
     try {
-      onChange(await api.deletePaper(set.id, p.id));
+      onChange(await api.deletePaper(set.id, id));
+      setLoaded((prev) => {
+        const next = { ...prev };
+        delete next[id];
+        return next;
+      });
       setOpenId(null);
     } catch (err) {
       setError(errorMessage(err));
@@ -108,14 +129,16 @@ export default function PaperTab({ set, onChange }: { set: StudySet; onChange: (
         <div className="no-print mt-6 flex flex-wrap items-center gap-3">
           <span className={label}>Your papers</span>
           {papers.map((p, i) => (
-            <button key={p.id} onClick={() => setOpenId(p.id)} className={tabClass(p.id === paper?.id)}>
+            <button key={p.id} onClick={() => setOpenId(p.id)} className={tabClass(p.id === summary?.id)}>
               {p.total_marks} marks #{papers.length - i}
             </button>
           ))}
         </div>
       )}
 
-      {paper && (
+      {summary && !paper && !error && <Loading />}
+
+      {summary && paper && (
         <div className="mt-8">
           <div className="no-print mb-4 flex flex-wrap items-center justify-between gap-3">
             <label className="flex cursor-pointer items-center gap-2 text-ink">
@@ -131,7 +154,7 @@ export default function PaperTab({ set, onChange }: { set: StudySet; onChange: (
               <button onClick={() => window.print()} className={secondaryButton}>
                 Print / save as PDF
               </button>
-              <button onClick={() => remove(paper)} className={dangerButton}>
+              <button onClick={() => remove(paper.id)} className={dangerButton}>
                 Delete
               </button>
             </div>

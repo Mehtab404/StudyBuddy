@@ -1,28 +1,26 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { EmptyState, ErrorBox, Loading, chip, dangerButton, errorMessage, pageLead, pageTitle, primaryButton } from "@/components/ui";
-import { api, type StudySetSummary } from "@/lib/api";
+import { useCallback, useState } from "react";
+import { EmptyState, ErrorBox, LoadMore, Loading, chip, dangerButton, errorMessage, pageLead, pageTitle, primaryButton } from "@/components/ui";
+import { api } from "@/lib/api";
+import { usePaged } from "@/lib/usePaged";
 
 export default function SetsPage() {
-  const [sets, setSets] = useState<StudySetSummary[] | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    api
-      .listSets()
-      .then(setSets)
-      .catch((err) => setError(errorMessage(err)));
-  }, []);
+  const fetchPage = useCallback((cursor: string | null, signal: AbortSignal) => api.listSets(cursor, signal), []);
+  const { items: sets, total, hasMore, error, setError, loadingMore, loadMore, removeItem, retry } = usePaged(fetchPage);
+  const [deleting, setDeleting] = useState<string | null>(null);
 
   async function remove(id: string) {
     if (!window.confirm("Delete this study set and everything made from it?")) return;
+    setDeleting(id);
     try {
       await api.deleteSet(id);
-      setSets((prev) => prev?.filter((s) => s.id !== id) ?? null);
+      removeItem(id);
     } catch (err) {
       setError(errorMessage(err));
+    } finally {
+      setDeleting(null);
     }
   }
 
@@ -38,9 +36,9 @@ export default function SetsPage() {
         </Link>
       </div>
 
-      <ErrorBox message={error} />
+      <ErrorBox message={error} onRetry={sets === null ? retry : undefined} />
       {sets === null && !error && <Loading />}
-      {sets && sets.length === 0 && (
+      {sets && sets.length === 0 && !hasMore && (
         <div className="mt-8">
           <EmptyState title="No study sets yet" text="Add your notes once and get revision notes, quizzes, exam papers and flashcards.">
             <Link href="/" className={primaryButton}>
@@ -79,13 +77,14 @@ export default function SetsPage() {
                   )}
                 </div>
               </Link>
-              <button onClick={() => remove(s.id)} className={dangerButton}>
+              <button onClick={() => remove(s.id)} disabled={deleting === s.id} className={dangerButton}>
                 Delete
               </button>
             </li>
           );
         })}
       </ul>
+      {sets && <LoadMore shown={sets.length} total={total} hasMore={hasMore} loading={loadingMore} onClick={loadMore} />}
     </div>
   );
 }

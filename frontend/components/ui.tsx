@@ -41,12 +41,20 @@ export const tabClass = (active: boolean) =>
     active ? "bg-ink text-white" : "bg-white text-ink"
   }`;
 
-export function ErrorBox({ message }: { message: string | null }) {
+// onRetry adds a "Try again" button, for an error from loading a page that the user can usefully ask for again
+export function ErrorBox({ message, onRetry }: { message: string | null; onRetry?: () => void }) {
   if (!message) return null;
   return (
-    <p role="alert" className="mt-4 border-2 border-ink bg-rose-100 px-4 py-3 font-medium text-rose-900 shadow-hard">
-      {message}
-    </p>
+    <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-2 border-ink bg-rose-100 px-4 py-3 shadow-hard">
+      <p role="alert" className="font-medium text-rose-900">
+        {message}
+      </p>
+      {onRetry && (
+        <button onClick={onRetry} className={secondaryButton}>
+          Try again
+        </button>
+      )}
+    </div>
   );
 }
 
@@ -70,4 +78,31 @@ export function EmptyState({ title, text, children }: { title: string; text: str
 
 export function errorMessage(err: unknown) {
   return err instanceof Error ? err.message : "Something went wrong";
+}
+
+// Under a list that comes in pages: how much is shown, and a button for the next page when there is one
+export function LoadMore({
+  shown,
+  total,
+  hasMore,
+  loading,
+  onClick,
+}: {
+  shown: number;
+  total: number;
+  hasMore: boolean;
+  loading: boolean;
+  onClick: () => void;
+}) {
+  if (!hasMore) return null;
+  return (
+    <div className="mt-6 flex flex-wrap items-center justify-center gap-4">
+      <p className="font-mono text-xs uppercase tracking-wider text-stone-500" aria-live="polite">
+        Showing {shown} of {total}
+      </p>
+      <button onClick={onClick} disabled={loading} className={secondaryButton}>
+        {loading ? "Loading…" : "Load more"}
+      </button>
+    </div>
+  );
 }
