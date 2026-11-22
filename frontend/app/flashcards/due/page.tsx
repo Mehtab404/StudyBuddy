@@ -3,11 +3,11 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { EmptyState, ErrorBox, Loading, chip, errorMessage, label, pageLead, pageTitle, primaryButton } from "@/components/ui";
-import { api, type Card } from "@/lib/api";
+import { api, localDate, type Card } from "@/lib/api";
 
 function dueLabel(card: Card) {
   if (!card.due_date) return { text: "New", color: "bg-mint" };
-  const today = new Date().toLocaleDateString("en-CA"); // local date as YYYY-MM-DD
+  const today = localDate();
   return card.due_date < today
     ? { text: `Overdue (was ${card.due_date})`, color: "bg-peach" }
     : { text: "Due today", color: "bg-sun" };

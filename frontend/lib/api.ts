@@ -151,6 +151,13 @@ export const tokenStore = {
 // so this is generous; it only stops a stuck request from leaving the page spinning forever.
 const REQUEST_TIMEOUT_MS = 180_000;
 
+// Today's date in the browser's time zone, as YYYY-MM-DD
+export function localDate(): string {
+  const d = new Date();
+  const two = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${two(d.getMonth() + 1)}-${two(d.getDate())}`;
+}
+
 async function request<T>(path: string, init?: RequestInit, { auth = true } = {}): Promise<T> {
   const headers = new Headers(init?.headers);
   // JSON bodies are strings; FormData and URLSearchParams set their own content type
@@ -159,6 +166,8 @@ async function request<T>(path: string, init?: RequestInit, { auth = true } = {}
   }
   const token = auth ? tokenStore.get() : null;
   if (token) headers.set("Authorization", `Bearer ${token}`);
+  // The user's calendar day, so cards fall due by their clock and not the server's (which runs on UTC)
+  headers.set("X-Client-Date", localDate());
 
   let res: Response;
   try {

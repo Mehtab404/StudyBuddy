@@ -1,6 +1,6 @@
-from datetime import date
+from datetime import date, datetime, timezone
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, Header, HTTPException
 from pydantic import BaseModel
 from pymongo.database import Database
 
@@ -18,14 +18,34 @@ class ReviewIn(BaseModel):
     easy: bool = False  # "I knew it easily": only counts together with knew=true, and raises the card's ease factor
 
 
+def users_today(client_date: str | None) -> date:
+    """The user's calendar day, from the date their browser sends in X-Client-Date (YYYY-MM-DD).
+
+    The server runs on UTC, so its own date is wrong for part of the day for everyone else: a user in India (UTC+5:30)
+    would see a card become due at 5:30 am. Local dates are never more than a day away from the UTC date, so anything
+    further off, or not a date at all, is ignored and the UTC date is used. The worst a made-up date can do is change
+    when the sender's own cards are due.
+    """
+    utc_today = datetime.now(timezone.utc).date()
+    try:
+        claimed = date.fromisoformat(client_date or "")
+    except ValueError:
+        return utc_today
+    return claimed if abs((claimed - utc_today).days) <= 1 else utc_today
+
+
 @router.get("/quiz/due", response_model=list[CardOut])
-def cards_due_today(db: Database = Depends(get_db), user: dict = Depends(get_current_user)):
+def cards_due_today(
+    x_client_date: str | None = Header(default=None),
+    db: Database = Depends(get_db),
+    user: dict = Depends(get_current_user),
+):
     """Your approved cards that are due today or overdue (never-reviewed cards count as due)."""
     # ISO date strings compare correctly as text. {"due_date": None} would also match a missing field.
     query = {
         "user_id": user["_id"],
         "status": CardStatus.approved.value,
-        "$or": [{"due_date": None}, {"due_date": {"$lte": date.today().isoformat()}}],
+        "$or": [{"due_date": None}, {"due_date": {"$lte": users_today(x_client_date).isoformat()}}],
     }
     # Mongo sorts null before any string, so never-reviewed cards come first
     cursor = db.cards.find(query).sort([("due_date", 1), ("_id", 1)])
@@ -36,6 +56,7 @@ def cards_due_today(db: Database = Depends(get_db), user: dict = Depends(get_cur
 def review_card(
     card_id: str,
     review: ReviewIn,
+    x_client_date: str | None = Header(default=None),
     db: Database = Depends(get_db),
     user: dict = Depends(get_current_user),
 ):
@@ -45,7 +66,12 @@ def review_card(
         raise HTTPException(status_code=400, detail="Only approved cards can be quizzed")
 
     s = next_schedule(
-        card["ease_factor"], card["interval_days"], card["repetitions"], review.knew, date.today(), easy=review.easy
+        card["ease_factor"],
+        card["interval_days"],
+        card["repetitions"],
+        review.knew,
+        users_today(x_client_date),
+        easy=review.easy,
     )
     updated = _update_card(
         db,
