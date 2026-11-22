@@ -3,9 +3,12 @@ from datetime import date, timedelta
 
 MIN_EASE = 1.3
 
-# SM-2 grades answers 0-5 and treats 3+ as a pass. With two buttons we use the
-# grades that mean "recalled it" (4) and "failed to recall" (1).
+# SM-2 grades answers 0-5 and treats 3+ as a pass. The quiz has three buttons, which use the grades that mean
+# "failed to recall" (1), "recalled it" (4) and "recalled it easily" (5).
+# Only an easy answer raises the ease factor (+0.1). A plain "recalled it" leaves it unchanged and a failure lowers it
+# (-0.54), so without the easy button every card could only get harder.
 QUALITY_KNEW = 4
+QUALITY_EASY = 5
 QUALITY_DIDNT = 1
 
 
@@ -17,8 +20,10 @@ class Schedule:
     due_date: date
 
 
-def next_schedule(ease_factor: float, interval_days: int, repetitions: int, knew: bool, today: date) -> Schedule:
-    quality = QUALITY_KNEW if knew else QUALITY_DIDNT
+def next_schedule(
+    ease_factor: float, interval_days: int, repetitions: int, knew: bool, today: date, easy: bool = False
+) -> Schedule:
+    quality = (QUALITY_EASY if easy else QUALITY_KNEW) if knew else QUALITY_DIDNT
 
     if quality >= 3:
         if repetitions == 0:

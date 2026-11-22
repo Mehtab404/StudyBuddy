@@ -242,8 +242,8 @@ export const api = {
   listCards: (status: CardStatus) => request<Card[]>(`/cards?status=${status}`),
   checkStats: () => request<CheckStats>("/stats/checks"),
   dueCards: () => request<Card[]>("/quiz/due"),
-  review: (id: string, knew: boolean) =>
-    request<Card>(`/cards/${id}/review`, { method: "POST", body: JSON.stringify({ knew }) }),
+  review: (id: string, knew: boolean, easy = false) =>
+    request<Card>(`/cards/${id}/review`, { method: "POST", body: JSON.stringify({ knew, easy }) }),
   approve: (id: string) => request<Card>(`/cards/${id}/approve`, { method: "POST" }),
   reject: (id: string) => request<Card>(`/cards/${id}/reject`, { method: "POST" }),
   edit: (id: string, fields: { question?: string; answer?: string }) =>

@@ -15,6 +15,7 @@ router = APIRouter(tags=["quiz"])
 
 class ReviewIn(BaseModel):
     knew: bool
+    easy: bool = False  # "I knew it easily": only counts together with knew=true, and raises the card's ease factor
 
 
 @router.get("/quiz/due", response_model=list[CardOut])
@@ -43,7 +44,9 @@ def review_card(
     if card["status"] != CardStatus.approved.value:
         raise HTTPException(status_code=400, detail="Only approved cards can be quizzed")
 
-    s = next_schedule(card["ease_factor"], card["interval_days"], card["repetitions"], review.knew, date.today())
+    s = next_schedule(
+        card["ease_factor"], card["interval_days"], card["repetitions"], review.knew, date.today(), easy=review.easy
+    )
     updated = _update_card(
         db,
         card,

@@ -21,12 +21,12 @@ export default function QuizPage() {
       .catch((err) => setError(errorMessage(err)));
   }, []);
 
-  async function answer(knew: boolean) {
+  async function answer(knew: boolean, easy = false) {
     if (!queue) return;
     setBusy(true);
     setError(null);
     try {
-      const updated = await api.review(queue[index].id, knew);
+      const updated = await api.review(queue[index].id, knew, easy);
       if (knew) setKnewCount((n) => n + 1);
       setLastInterval(updated.interval_days);
       setIndex((i) => i + 1);
@@ -87,7 +87,7 @@ export default function QuizPage() {
             )}
           </article>
 
-          <div className="mt-8 flex justify-center gap-4">
+          <div className="mt-8 flex flex-wrap justify-center gap-4">
             {!revealed ? (
               <button onClick={() => setRevealed(true)} className={`${primaryButton} px-10 py-3 text-lg`}>
                 Show answer
@@ -99,6 +99,9 @@ export default function QuizPage() {
                 </button>
                 <button onClick={() => answer(true)} disabled={busy} className={`${primaryButton} px-6 py-3`}>
                   I knew it ✓
+                </button>
+                <button onClick={() => answer(true, true)} disabled={busy} className={`${secondaryButton} bg-mint px-6 py-3 text-base`}>
+                  Too easy ⚡
                 </button>
               </>
             )}
