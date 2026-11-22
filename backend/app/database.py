@@ -27,13 +27,21 @@ def _ensure_ttl_index(collection, field: str, days: int):
         )
 
 
+def _drop_index_if_exists(collection, name: str):
+    """Removes an index that a newer one makes redundant. Does nothing if it is already gone."""
+    try:
+        collection.drop_index(name)
+    except OperationFailure:
+        pass
+
+
 def init_indexes():
     # Safe to run every startup: creating an index that already exists is a no-op
     db.users.create_index("email", unique=True)
     db.users.create_index([("is_guest", ASCENDING), ("created_at", ASCENDING)])  # finding expired guests
-    db.notes.create_index("user_id")
+    db.notes.create_index([("user_id", ASCENDING), ("created_at", -1)])  # list_sets: a user's sets, newest first
     db.cards.create_index("note_id")
-    db.cards.create_index([("user_id", ASCENDING), ("status", ASCENDING)])
+    db.cards.create_index([("user_id", ASCENDING), ("status", ASCENDING), ("created_at", ASCENDING), ("_id", ASCENDING)])
     db.cards.create_index([("user_id", ASCENDING), ("status", ASCENDING), ("due_date", ASCENDING)])
     db.cards.create_index([("user_id", ASCENDING), ("check_status", ASCENDING)])
     db.generation_runs.create_index([("user_id", ASCENDING), ("created_at", -1)])
@@ -41,3 +49,5 @@ def init_indexes():
     _ensure_ttl_index(db.generation_runs, "created_at", GENERATION_RUN_TTL_DAYS)
     db.chunks.create_index([("document_id", ASCENDING), ("chunk_index", ASCENDING)], unique=True)
     db.chunks.create_index("user_id")
+    _drop_index_if_exists(db.notes, "user_id_1")  # covered by the (user_id, created_at) index above
+    _drop_index_if_exists(db.cards, "user_id_1_status_1")  # covered by the (user_id, status, created_at, _id) index
