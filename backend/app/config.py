@@ -54,6 +54,10 @@ if len(JWT_SECRET) < 32:
     )
 JWT_EXPIRE_MINUTES = int(os.getenv("JWT_EXPIRE_MINUTES", "1440"))  # default: 24 hours
 
+# Each AI run (revision, quiz, paper, flashcards, answers) is logged in `generation_runs` with timings, token counts and
+# the start and end of its prompt, which is part of the user's notes. Logs older than this are deleted automatically.
+GENERATION_RUN_TTL_DAYS = max(1, int(os.getenv("GENERATION_RUN_TTL_DAYS", "30")))
+
 # Guest mode: lets anyone try the app without signing up. A guest is a temporary account that, together with
 # everything it created, is deleted this long after it was made. Set to 0 to turn guest mode off.
 GUEST_EXPIRE_MINUTES = int(os.getenv("GUEST_EXPIRE_MINUTES", "1440"))  # default: 24 hours

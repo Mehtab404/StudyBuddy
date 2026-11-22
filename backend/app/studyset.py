@@ -269,6 +269,7 @@ def delete_set(set_id: str, db: Database = Depends(get_db), user: dict = Depends
     doc = _get_set(db, set_id, user)
     db.cards.delete_many({"note_id": doc["_id"]})
     db.chunks.delete_many({"document_id": doc["_id"]})
+    db.generation_runs.delete_many({"set_id": doc["_id"]})  # the logs hold a snippet of the set's notes
     db.notes.delete_one({"_id": doc["_id"]})
 
 
