@@ -40,3 +40,7 @@ if len(JWT_SECRET) < 32:
         "and add it to backend/.env as JWT_SECRET=..."
     )
 JWT_EXPIRE_MINUTES = int(os.getenv("JWT_EXPIRE_MINUTES", "1440"))  # default: 24 hours
+
+# Guest mode: lets anyone try the app without signing up. A guest is a temporary account that, together with
+# everything it created, is deleted this long after it was made. Set to 0 to turn guest mode off.
+GUEST_EXPIRE_MINUTES = int(os.getenv("GUEST_EXPIRE_MINUTES", "1440"))  # default: 24 hours

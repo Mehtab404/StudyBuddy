@@ -81,7 +81,7 @@ function IntroPanel({ isSignup }: { isSignup: boolean }) {
 }
 
 export default function AuthForm({ mode }: { mode: "login" | "signup" }) {
-  const { login, signup } = useAuth();
+  const { login, signup, guest } = useAuth();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -99,6 +99,17 @@ export default function AuthForm({ mode }: { mode: "login" | "signup" }) {
     try {
       await (isSignup ? signup(name.trim(), email, password) : login(email, password, remember));
       // AuthProvider redirects to the home page once the user is set
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong");
+      setBusy(false);
+    }
+  }
+
+  async function handleGuest() {
+    setBusy(true);
+    setError(null);
+    try {
+      await guest();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
       setBusy(false);
@@ -204,6 +215,21 @@ export default function AuthForm({ mode }: { mode: "login" | "signup" }) {
               {!busy && <span aria-hidden="true">→</span>}
             </button>
           </form>
+
+          <div className="mt-6 flex items-center gap-4 font-mono text-xs uppercase tracking-widest text-stone-500">
+            <span className="h-0.5 flex-1 bg-stone-200" />
+            or
+            <span className="h-0.5 flex-1 bg-stone-200" />
+          </div>
+          <button
+            type="button"
+            onClick={handleGuest}
+            disabled={busy}
+            className="mt-6 flex w-full items-center justify-center gap-2 rounded-sm border-2 border-ink bg-white px-6 py-3 font-display text-base font-bold text-ink shadow-hard transition-transform hover:-translate-y-0.5 disabled:translate-y-0 disabled:cursor-wait disabled:opacity-70"
+          >
+            Continue as Guest
+          </button>
+          <p className="mt-2 text-center text-xs text-stone-500">No account needed. Guest sets are deleted after 24 hours.</p>
 
           <p className="mt-8 border-t-2 border-stone-200 pt-6 text-center text-stone-600">
             {isSignup ? "Already have an account?" : "Don't have an account?"}{" "}

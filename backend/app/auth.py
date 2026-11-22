@@ -1,4 +1,6 @@
 from datetime import datetime, timedelta, timezone
+import time
+import uuid
 
 import jwt
 from argon2 import PasswordHasher
@@ -9,7 +11,7 @@ from pydantic import BaseModel, EmailStr, Field
 from pymongo.database import Database
 from pymongo.errors import DuplicateKeyError
 
-from app.config import JWT_EXPIRE_MINUTES, JWT_SECRET
+from app.config import GUEST_EXPIRE_MINUTES, JWT_EXPIRE_MINUTES, JWT_SECRET
 from app.database import get_db
 from app.models import now, parse_id
 from app.ratelimit import login_blocked_for, record_failed_login
@@ -43,18 +45,19 @@ class UserOut(BaseModel):
     email: str
     name: str | None = None  # accounts made before names were asked for have none
     created_at: datetime | None = None
+    is_guest: bool = False  # a temporary account made by "Continue as guest"
 
 
 def _normalize_email(email: str) -> str:
     return email.strip().lower()
 
 
-def create_access_token(user_id: str) -> str:
+def create_access_token(user_id: str, minutes: int = JWT_EXPIRE_MINUTES) -> str:
     issued = datetime.now(timezone.utc)
     claims = {
         "sub": user_id,  # who the token is for
         "iat": issued,
-        "exp": issued + timedelta(minutes=JWT_EXPIRE_MINUTES),  # checked automatically on decode
+        "exp": issued + timedelta(minutes=minutes),  # checked automatically on decode
     }
     return jwt.encode(claims, JWT_SECRET, algorithm=ALGORITHM)
 
@@ -110,8 +113,10 @@ def login(form: OAuth2PasswordRequestForm = Depends(), db: Database = Depends(ge
 
     password_ok = False
     try:
-        hasher.verify(user["password_hash"] if user else _DUMMY_HASH, form.password)
-        password_ok = user is not None
+        # Guest accounts have no password, so nothing can match: they only get in through /auth/guest
+        stored_hash = user.get("password_hash") if user else None
+        hasher.verify(stored_hash or _DUMMY_HASH, form.password)
+        password_ok = user is not None and stored_hash is not None
     except (VerificationError, InvalidHashError):
         pass
 
@@ -129,5 +134,53 @@ def login(form: OAuth2PasswordRequestForm = Depends(), db: Database = Depends(ge
 @router.get("/me", response_model=UserOut)
 def me(user: dict = Depends(get_current_user)):
     return UserOut(
-        id=str(user["_id"]), email=user["email"], name=user.get("name"), created_at=user.get("created_at")
+        id=str(user["_id"]),
+        email=user["email"],
+        name=user.get("name"),
+        created_at=user.get("created_at"),
+        is_guest=bool(user.get("is_guest")),
     )
+
+
+# Collections that hold a user's data, each keyed by user_id
+_USER_DATA = ("cards", "chunks", "generation_runs", "notes")
+_PURGE_EVERY = 10 * 60  # seconds between clean-ups triggered by new guests
+_last_purge = 0.0
+
+
+def purge_expired_guests(db: Database) -> int:
+    """Deletes guest accounts older than GUEST_EXPIRE_MINUTES together with their sets, cards and chunks."""
+    cutoff = now() - timedelta(minutes=GUEST_EXPIRE_MINUTES)
+    ids = [u["_id"] for u in db.users.find({"is_guest": True, "created_at": {"$lt": cutoff}}, {"_id": 1})]
+    if not ids:
+        return 0
+    for name in _USER_DATA:
+        db[name].delete_many({"user_id": {"$in": ids}})
+    # The account goes last, so a clean-up that stops half way is retried next time
+    db.users.delete_many({"_id": {"$in": ids}})
+    return len(ids)
+
+
+@router.post("/guest", response_model=TokenOut, status_code=201)
+def guest(db: Database = Depends(get_db)):
+    """Creates a temporary account so anyone can try the app without signing up."""
+    global _last_purge
+    if GUEST_EXPIRE_MINUTES <= 0:
+        raise HTTPException(status_code=404, detail="Guest mode is turned off")
+
+    if time.monotonic() - _last_purge > _PURGE_EVERY:
+        _last_purge = time.monotonic()
+        purge_expired_guests(db)
+
+    # The email only has to be unique. ".invalid" can never be a real address, and signup rejects it, so no
+    # real account can collide with it.
+    result = db.users.insert_one(
+        {
+            "name": "Guest",
+            "email": f"guest-{uuid.uuid4().hex}@guest.invalid",
+            "is_guest": True,
+            "created_at": now(),
+        }
+    )
+    # The token stops working at the same time the guest's data is deleted
+    return TokenOut(access_token=create_access_token(str(result.inserted_id), min(JWT_EXPIRE_MINUTES, GUEST_EXPIRE_MINUTES)))

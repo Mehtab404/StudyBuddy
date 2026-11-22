@@ -32,7 +32,7 @@ export type GenerateResult = {
   dropped: number;
 };
 
-export type User = { id: string; email: string; name: string | null; created_at: string | null };
+export type User = { id: string; email: string; name: string | null; created_at: string | null; is_guest?: boolean };
 
 // A file a study set was made from. A set holds up to MAX_FILES of them.
 export const MAX_FILES = 3;
@@ -197,6 +197,7 @@ export const api = {
       { auth: false },
     ),
   me: () => request<User>("/auth/me"),
+  guest: () => request<Token>("/auth/guest", { method: "POST" }, { auth: false }),
 
   generate: (notes: string, maxCards: number) =>
     request<GenerateResult>("/flashcards", {

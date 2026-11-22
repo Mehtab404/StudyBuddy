@@ -17,6 +17,7 @@ def get_db() -> Database:
 def init_indexes():
     # Safe to run every startup: creating an index that already exists is a no-op
     db.users.create_index("email", unique=True)
+    db.users.create_index([("is_guest", ASCENDING), ("created_at", ASCENDING)])  # finding expired guests
     db.notes.create_index("user_id")
     db.cards.create_index("note_id")
     db.cards.create_index([("user_id", ASCENDING), ("status", ASCENDING)])

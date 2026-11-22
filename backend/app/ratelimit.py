@@ -35,8 +35,8 @@ class Rule:
 
 _ID = r"[^/]+"
 RULES = [
-    # Password guessing and mass account creation
-    Rule("auth", frozenset({"POST"}), re.compile(r"^/auth/(login|signup)$"), limit=10, window=60, per_user=False),
+    # Password guessing and mass account creation (including guest accounts)
+    Rule("auth", frozenset({"POST"}), re.compile(r"^/auth/(login|signup|guest)$"), limit=10, window=60, per_user=False),
     # Every one of these calls Groq, some several times (ask with fact-checking makes up to 7 calls)
     Rule(
         "ai",

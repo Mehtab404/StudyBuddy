@@ -9,7 +9,7 @@ from pydantic import BaseModel
 from pymongo.database import Database
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from app.auth import get_current_user, router as auth_router
+from app.auth import get_current_user, purge_expired_guests, router as auth_router
 from app.cards import router as cards_router
 from app.ask import router as ask_router
 from app.chunks_api import router as chunks_router
@@ -30,6 +30,9 @@ log = logging.getLogger("app")
 async def lifespan(app: FastAPI):
     # Collections are created on first write; indexes (incl. unique email) are created here
     init_indexes()
+    removed = purge_expired_guests(get_db())
+    if removed:
+        log.info("removed %d expired guest account(s)", removed)
     log.info("started (debug endpoints %s)", "ON" if ENABLE_DEBUG else "off")
     yield
 

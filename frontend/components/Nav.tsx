@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/components/AuthProvider";
 import Logo from "@/components/Logo";
-import type { User } from "@/lib/api";
+import { tokenStore, type User } from "@/lib/api";
 
 const links = [
   { href: "/", label: "New set", match: (p: string) => p === "/" },
@@ -17,7 +17,7 @@ function ProfileMenu({ user, logout }: { user: User; logout: () => void }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   // Accounts made before names were asked for have none, so fall back to the start of the email
-  const name = user.name || user.email.split("@")[0];
+  const name = user.is_guest ? "Guest" : user.name || user.email.split("@")[0];
   const initial = name.charAt(0).toUpperCase();
   const since = user.created_at
     ? new Date(user.created_at).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" })
@@ -55,10 +55,32 @@ function ProfileMenu({ user, logout }: { user: User; logout: () => void }) {
             </span>
             <div className="min-w-0">
               <p className="truncate font-display font-bold text-ink">{name}</p>
-              <p className="truncate text-xs text-stone-600">{user.email}</p>
+              {user.is_guest ? (
+                <p className="text-xs text-stone-600">Temporary session</p>
+              ) : (
+                <p className="truncate text-xs text-stone-600">{user.email}</p>
+              )}
             </div>
           </div>
-          {since && <p className="mt-3 font-mono text-[11px] uppercase tracking-wider text-stone-500">Member since {since}</p>}
+          {user.is_guest ? (
+            <p className="mt-3 text-xs text-stone-600">
+              Your sets are deleted after 24 hours.{" "}
+              <button
+                type="button"
+                onClick={() => {
+                  // Full page load so the provider does not redirect to /login in between
+                  tokenStore.clear();
+                  window.location.href = "/signup";
+                }}
+                className="font-bold text-ink underline underline-offset-2"
+              >
+                Sign up
+              </button>{" "}
+              to keep an account (guest sets are not carried over).
+            </p>
+          ) : (
+            since && <p className="mt-3 font-mono text-[11px] uppercase tracking-wider text-stone-500">Member since {since}</p>
+          )}
           <button
             onClick={logout}
             className="mt-4 w-full border-2 border-ink bg-white px-4 py-2 font-display text-sm font-bold text-ink shadow-hard transition-transform hover:-translate-y-0.5"
