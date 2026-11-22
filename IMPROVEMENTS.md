@@ -94,7 +94,8 @@ Items are grouped by priority. Effort is a rough guess: **S** = under an hour, *
   - `cards`: add `(user_id, status, created_at, _id)` for `list_cards`.
   - `chunks`: add `(document_id, embedding_model)` for the checks in `ask.py:124-130`.
 
-### 3.3 Deletes and creates are not atomic (M)
+### 3.3 Deletes and creates are not atomic (M) [SKIPPED]
+- **Decision:** not worth doing now. The order of the writes already makes a crash safe to recover from: `delete_set` removes the set last, so the user can simply delete it again, and a set whose chunks are missing gets them rebuilt on the first question (`_ensure_embedded`). Transactions also need a replica set, so they would not run on a local standalone MongoDB or under `mongomock`, which means a second code path that the tests cannot reach. Revisit if orphaned data ever shows up.
 - **Where:** `delete_set` runs three separate deletes. `_create` inserts the set, then the chunks. `generate.py:58-66` undoes a failure by hand.
 - **Problem:** a crash in between leaves orphaned cards or chunks.
 - **Fix:** MongoDB Atlas is a replica set, so transactions work there. Use `client.start_session()` with `with_transaction`. Keep the manual cleanup as a fallback for a local standalone MongoDB.
@@ -126,7 +127,7 @@ Items are grouped by priority. Effort is a rough guess: **S** = under an hour, *
 - **Where:** the score is computed only in the browser (`frontend/components/set/QuizTab.tsx`). Making a new quiz also overwrites the old one (`studyset.py:434`).
 - **Fix:** store quiz attempts (set, score, wrong question ids, date). Show a "weak topics" list and let users retry only the questions they got wrong.
 
-### 4.4 The paper marks fix-up can still show a wrong total (S)
+### 4.4 The paper marks fix-up can still show a wrong total (S) [DONE]
 - **Where:** `make_paper` in `studyset.py`: `if last["marks"] + diff >= 1`.
 - **Problem:** when the paper has too many marks and the last question is small, nothing is fixed. The paper is saved with the wrong total.
 - **Fix:** spread the difference across several questions, or reject the paper and retry.
@@ -135,7 +136,7 @@ Items are grouped by priority. Effort is a rough guess: **S** = under an hour, *
 
 ## 5. Tests and CI
 
-### 5.1 Add tests for the parts that aren't covered (M)
+### 5.1 Add tests for the parts that aren't covered (M) [DONE]
 - **Covered now:** `backend/tests` covers chunking, retrieval, embeddings, verification and `ask` helpers.
 - **Not covered:**
   - auth: signup, login, lockout, expired token,
@@ -146,6 +147,7 @@ Items are grouped by priority. Effort is a rough guess: **S** = under an hour, *
   - card ownership (another user's card returns 404),
   - every HTTP endpoint.
 - **Fix:** use FastAPI's `TestClient` with `mongomock`, or a throwaway test database, and replace Groq with a fake.
+- **Done:** 189 new tests (285 in total): `tests/test_api_auth.py`, `test_api_sets.py`, `test_api_cards.py`, `test_api_misc.py` and `test_ratelimit.py`. They use `TestClient` with `mongomock` and a fake Groq, and include a sweep that fails if any route other than the five public ones answers without a login. The test-only packages are in `backend/requirements-dev.txt`, which CI installs. Writing them found one bug, now fixed: `true` from the AI was accepted as 1 mark or answer index 1.
 
 ### 5.2 Set up CI (S) [DONE]
 - **Problem:** the repo has no `.github/workflows`.
@@ -167,21 +169,25 @@ Items are grouped by priority. Effort is a rough guess: **S** = under an hour, *
 - **Done:** `error.tsx`, `global-error.tsx`, a root `not-found.tsx` and a `sets/[id]/not-found.tsx` (the set page shows it on a 404). No `loading.tsx`: every page fetches on the client and already shows its own loading state, so that file would never appear.
 - **Original suggestion:** add them under `frontend/app/`. Check the Next.js docs in `frontend/node_modules/next/dist/docs/` first, as `frontend/AGENTS.md` asks.
 
-### 6.2 Page titles and link previews (S)
+### 6.2 Page titles and link previews (S) [PARTLY DONE]
 - **Problem:** only the root layout sets `metadata`, so every tab is titled "studyBuddy". There are no Open Graph tags, so links shared on LinkedIn or WhatsApp show no preview.
 - **Fix:** set a title per page (for example "My sets · studyBuddy"). Add an Open Graph image, `robots.txt` and `sitemap.xml`.
+- **Done:** a title template and basic Open Graph/Twitter tags in the root layout, a title for every page (the set page uses its own title), and `robots.ts`. **Still open:** an Open Graph image and `sitemap.xml`, which need the deployed site URL and a design.
 
-### 6.3 Accessibility (S)
+### 6.3 Accessibility (S) [PARTLY DONE]
 - **Where:** the set page tabs in `frontend/app/sets/[id]/page.tsx` are plain buttons.
 - **Fix:**
   - Give the tabs `role="tablist"`, `role="tab"` and `role="tabpanel"`, with arrow-key navigation.
-  - Replace `window.confirm` for deletes (`sets/page.tsx`, `PaperTab.tsx`) with an accessible dialog.
+  - **Done:** the set page tabs now use `role="tablist"`/`tab`/`tabpanel` with arrow, Home and End keys.
+  - **Still open:** replace `window.confirm` for deletes (`sets/page.tsx`, `PaperTab.tsx`) with an accessible dialog.
 
 ### 6.4 Data fetching (M)
 - **Problem:** pages fetch inside `useEffect` with no cancel or retry, for example `sets/[id]/page.tsx`. Leaving a page mid-request can set state on a page that is no longer shown.
 - **Fix:** use SWR or TanStack Query for caching, retries and refetching. At minimum, cancel the request when the component unmounts.
 
-### 6.5 Frontend tests (M)
+### 6.5 Frontend tests (M) [DONE]
+- **Done:** Playwright tests in `frontend/e2e/` (14 tests) run against a fake backend (`backend/e2e_server.py`: mongomock plus canned AI answers) and a production build of the site. They cover the guest -> set -> quiz -> flashcards journey, and also the quiz results and retry, exam papers, "Load more", rename, the library search and delete, the account page, tab keyboard use and page titles. A CI job runs them (`e2e` in `.github/workflows/ci.yml`). Writing them found one bug in the app: the flashcard pages lost the "· studyBuddy" part of their title. Planted bugs in the app code were caught by them, but the CI job itself has not run yet.
+- **Original notes:**
 - **Problem:** there is no test framework.
 - **Fix:** add Playwright for a few end-to-end flows: guest login → create a set → make a quiz → review flashcards.
 
@@ -192,12 +198,13 @@ Items are grouped by priority. Effort is a rough guess: **S** = under an hour, *
 ### 7.1 Accounts
 - **Turn a guest into a real account (M). [DONE]** Add `POST /auth/upgrade`, which sets the email, name and password on the existing guest user and clears `is_guest`. All data is keyed by user id, so the guest's sets carry over automatically. This is the most useful follow-up to guest mode.
 - **Password reset by email (M).** Users who forget their password are currently locked out for good. This needs an email provider such as Resend or SendGrid.
-- **Change password and delete account (S).** Deleting an account should also delete the user's data, which helps with privacy and GDPR.
+- **Change password and delete account (S). [DONE]** `POST /auth/password` and `POST /auth/delete-account`, with an Account page (`/account`). Both check the current password, and wrong guesses count toward the same 10-failure lockout as login. A password change ends every earlier login of that account. Deleting removes the sets, cards, chunks and run logs along with the account. A guest can delete without a password.
 - **Email verification (M).**
 
 ### 7.2 Study sets
-- **Rename a set, and add files to an existing one (S/M).**
-- **Delete single flashcards (S).** `cards.py` has approve, reject and edit, but no delete.
+- **Rename a set (S). [DONE]** `PATCH /sets/{id}` and a Rename button on the set page.
+- **Add files to an existing set (M).** Still open.
+- **Delete single flashcards (S). [DONE]** `DELETE /cards/{id}`, with a Delete button (and a confirm step) in the flashcard library.
 - **Export (M):** flashcards to Anki or CSV, revision notes and papers to PDF. Printing works today, but a download button is easier to find.
 - **Share a set (L):** a read-only public link to a set.
 - **Progress page (M):** cards reviewed per day, streaks, quiz scores over time, and weak topics.
@@ -206,12 +213,16 @@ Items are grouped by priority. Effort is a rough guess: **S** = under an hour, *
 
 ## 8. Repo hygiene
 
-- **Pin all dependencies (S).** `backend/requirements.txt` pins only the top-level packages, so sub-dependencies can change between deploys. Use `pip-tools` (`requirements.in` → `requirements.txt`) or `uv lock`. Add a separate dev-requirements file for test tools.
-- **Remove leftovers (S).**
+- **Pin all dependencies (S). [PARTLY DONE]** Top-level packages are pinned now; sub-dependencies and a dev-requirements file are still open.
+  Original note: `backend/requirements.txt` pins only the top-level packages, so sub-dependencies can change between deploys. Use `pip-tools` (`requirements.in` → `requirements.txt`) or `uv lock`. Add a separate dev-requirements file for test tools.
+- **Remove leftovers (S). [DONE]** The Postgres migration script, the create-next-app images and `frontend/README.md` are deleted.
+  Original note:
   - `backend/migrate_postgres_to_mongo.py` imports `psycopg2`, which isn't installed. Delete it or move it to a `scripts/` folder.
   - Delete the unused create-next-app files in `frontend/public/` (`file.svg`, `globe.svg`, `next.svg`, `vercel.svg`, `window.svg`) and the default `frontend/README.md`.
-- **Fix the Python version mismatch (S).** `render.yaml` uses Python 3.14.7, but the README says "3.10 or newer". Pick one supported range and test against it.
-- **Narrow CORS (S).** `main.py` allows all methods and headers. List only the ones used: `GET`, `POST`, `PATCH`, `DELETE`, and the `Authorization` and `Content-Type` headers.
+- **Fix the Python version mismatch (S). [DONE]** The README now says Python 3.14.
+  Original note: `render.yaml` uses Python 3.14.7, but the README says "3.10 or newer". Pick one supported range and test against it.
+- **Narrow CORS (S). [DONE]** Methods are limited to `GET`/`POST`/`PATCH`/`DELETE` and headers to `Authorization`, `Content-Type` and `X-Client-Date`.
+  Original note: `main.py` allows all methods and headers. List only the ones used: `GET`, `POST`, `PATCH`, `DELETE`, and the `Authorization` and `Content-Type` headers.
 - **Add a LICENSE (S)** so others know if they can reuse the code, and add a Dockerfile if you want to deploy somewhere other than Render.
 - **Correct the README test claim (S).** It says "84 tests, no server or AI key needed", but `test_embeddings.py` downloads the embedding model (about 100 MB).
 
